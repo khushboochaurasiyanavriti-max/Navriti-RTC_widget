@@ -1,0 +1,39 @@
+.rtc-message-list {
+    flex: 1;
+
+    min-height: 0;
+
+    overflow-y: auto;
+    overflow-x: hidden;
+
+    padding: 14px 16px;
+
+    background: #efeae2;
+
+    scroll-behavior: smooth;
+}
+
+
+/* ================================
+   Message Scrollbar
+================================ */
+
+.rtc-message-list::-webkit-scrollbar {
+    width: 6px;
+}
+
+.rtc-message-list::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.rtc-message-list::-webkit-scrollbar-thumb {
+    background: #c4d5c8;
+
+    border-radius: 10px;
+
+    transition: background 0.2s ease;
+}
+
+.rtc-message-list::-webkit-scrollbar-thumb:hover {
+    background: #9fbaaa;
+}

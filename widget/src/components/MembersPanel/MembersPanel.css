@@ -1,0 +1,202 @@
+/* ================================
+   Members Panel
+================================ */
+
+.rtc-members-panel {
+    flex-shrink: 0;
+
+    background: #ffffff;
+
+    border-bottom: 1px solid #e7e9f0;
+
+    padding: 12px 16px;
+
+    animation: rtc-members-toggle 0.2s ease-out;
+}
+
+
+/* ================================
+   Animation
+================================ */
+
+@keyframes rtc-members-toggle {
+    from {
+        opacity: 0;
+        max-height: 0;
+        transform: translateY(-5px);
+    }
+
+    to {
+        opacity: 1;
+        max-height: 300px;
+        transform: translateY(0);
+    }
+}
+
+
+/* ================================
+   Header
+================================ */
+
+.rtc-members-panel .rtc-members-panel-header {
+    display: flex;
+
+    align-items: center;
+    justify-content: space-between;
+
+    margin-bottom: 8px;
+}
+
+.rtc-members-panel .rtc-members-panel-header h3 {
+    margin: 0;
+
+    font-size: 14px;
+    font-weight: 600;
+
+    color: #292d36;
+}
+
+.rtc-members-panel .rtc-members-panel-header span {
+    min-width: 22px;
+    height: 22px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 50%;
+
+    background: #eef0ff;
+
+    color: #6366f1;
+
+    font-size: 11px;
+    font-weight: 600;
+}
+
+
+/* ================================
+   Members List
+================================ */
+
+.rtc-members-panel .rtc-members-list {
+    max-height: 220px;
+
+    overflow-y: auto;
+}
+
+
+/* ================================
+   Member Item
+================================ */
+
+.rtc-members-panel .rtc-member-item {
+    display: flex;
+
+    align-items: center;
+
+    gap: 9px;
+
+    padding: 7px;
+
+    border-radius: 8px;
+
+    transition: background 0.15s ease;
+}
+
+.rtc-members-panel .rtc-member-item:hover {
+    background: #f7f8ff;
+}
+
+
+/* ================================
+   Member Avatar
+================================ */
+
+.rtc-members-panel .rtc-member-avatar {
+    width: 32px;
+    height: 32px;
+
+    flex-shrink: 0;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 50%;
+
+    background: linear-gradient(
+        135deg,
+        #6366f1,
+        #818cf8
+    );
+
+    color: white;
+
+    font-size: 13px;
+    font-weight: 600;
+}
+
+
+/* ================================
+   Member Name
+================================ */
+
+.rtc-members-panel .rtc-member-name {
+    flex: 1;
+
+    min-width: 0;
+
+    overflow: hidden;
+
+    white-space: nowrap;
+    text-overflow: ellipsis;
+
+    font-size: 13px;
+
+    color: #292d36;
+}
+
+
+/* ================================
+   Current User
+================================ */
+
+.rtc-members-panel .rtc-member-you {
+    padding: 3px 7px;
+
+    border-radius: 10px;
+
+    background: #eef0ff;
+
+    color: #6366f1;
+
+    font-size: 10px;
+
+    font-weight: 600;
+}
+
+/* ================================
+   Members List Scrollbar
+================================ */
+
+.rtc-members-panel .rtc-members-list::-webkit-scrollbar {
+    width: 5px;
+}
+
+.rtc-members-panel .rtc-members-list::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.rtc-members-panel .rtc-members-list::-webkit-scrollbar-thumb {
+    background: #d5d8e6;
+
+    border-radius: 10px;
+
+    transition: background 0.2s ease;
+}
+
+.rtc-members-panel .rtc-members-list::-webkit-scrollbar-thumb:hover {
+    background: #b8bdd2;
+}

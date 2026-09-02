@@ -1,0 +1,204 @@
+/* =========================================================
+   Attachments
+   ========================================================= */
+
+.announcement-attachments {
+    margin-top: 15px;
+    padding-top: 13px;
+
+    border-top: 1px solid #f0f0f0;
+}
+
+
+/* =========================================================
+   Title
+   ========================================================= */
+
+.announcement-attachments-title {
+    margin-bottom: 8px;
+
+    color: #6b7280;
+
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+}
+
+
+/* =========================================================
+   List
+   ========================================================= */
+
+.announcement-attachment-list {
+    display: flex;
+    flex-direction: column;
+
+    gap: 6px;
+}
+
+
+/* =========================================================
+   Attachment
+   ========================================================= */
+
+.announcement-attachment {
+    display: flex;
+    align-items: center;
+
+    gap: 10px;
+
+    min-width: 0;
+
+    padding: 9px 10px;
+
+    border: 1px solid #e5e7eb;
+    border-radius: 7px;
+
+    background: #fafafa;
+
+    color: inherit;
+    text-decoration: none;
+
+    transition:
+        background 0.15s ease,
+        border-color 0.15s ease,
+        box-shadow 0.15s ease;
+}
+
+.announcement-attachment:hover {
+    background: #f7f7f7;
+
+    border-color: #d5d8dc;
+
+    box-shadow:
+        0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+
+/* =========================================================
+   File Icon
+   ========================================================= */
+
+.announcement-attachment-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    flex-shrink: 0;
+
+    width: 30px;
+    height: 30px;
+
+    border-radius: 6px;
+
+    background: #ffffff;
+
+    border: 1px solid #e5e7eb;
+
+    font-size: 15px;
+}
+
+
+/* =========================================================
+   File Information
+   ========================================================= */
+
+.announcement-attachment-info {
+    min-width: 0;
+    flex: 1;
+}
+
+
+/* File name */
+
+.announcement-attachment-name {
+    overflow: hidden;
+
+    color: #374151;
+
+    font-size: 12px;
+    font-weight: 500;
+
+    line-height: 1.4;
+
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+
+/* File details */
+
+.announcement-attachment-details {
+    display: flex;
+    align-items: center;
+
+    gap: 5px;
+
+    margin-top: 2px;
+
+    overflow: hidden;
+
+    color: #9ca3af;
+
+    font-size: 10px;
+
+    line-height: 1.3;
+}
+
+.announcement-attachment-details span {
+    overflow: hidden;
+
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+
+/* =========================================================
+   Open Icon
+   ========================================================= */
+
+.announcement-attachment-open {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    flex-shrink: 0;
+
+    width: 24px;
+    height: 24px;
+
+    border-radius: 5px;
+
+    color: #9ca3af;
+
+    font-size: 14px;
+
+    transition:
+        background 0.15s ease,
+        color 0.15s ease;
+}
+
+.announcement-attachment:hover
+.announcement-attachment-open {
+    background: #eeeeee;
+
+    color: #4b5563;
+}
+
+
+/* =========================================================
+   Mobile
+   ========================================================= */
+
+@media (max-width: 768px) {
+    .announcement-attachment {
+        padding: 8px 9px;
+    }
+
+    .announcement-attachment-icon {
+        width: 28px;
+        height: 28px;
+
+        font-size: 14px;
+    }
+}

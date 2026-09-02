@@ -1,0 +1,659 @@
+/* =====================================================
+SCREEN SHARE CONTAINER
+===================================================== */
+
+.rtc-screen-share-container {
+
+
+position: relative;
+
+width: 100%;
+
+height: 100%;
+
+min-width: 0;
+
+min-height: 0;
+
+display: flex;
+
+flex-direction: column;
+
+box-sizing: border-box;
+
+
+}
+
+/* =====================================================
+SCREEN SHARE BUTTON
+===================================================== */
+
+.rtc-screen-share-button {
+
+
+position: relative;
+
+z-index: 101;
+
+width: 38px;
+
+height: 38px;
+
+flex-shrink: 0;
+
+border: none;
+
+border-radius: 9px;
+
+background: transparent;
+
+color: #69707d;
+
+font-size: 17px;
+
+cursor: pointer;
+
+transition:
+    background 0.2s ease,
+    color 0.2s ease,
+    transform 0.15s ease;
+
+
+}
+
+.rtc-screen-share-button:hover {
+
+
+background: #eef0ff;
+
+color: #6366f1;
+
+
+}
+
+.rtc-screen-share-button.active {
+
+
+background: #6366f1;
+
+color: white;
+
+
+}
+
+.rtc-screen-share-button:active {
+
+
+transform: scale(0.92);
+
+
+}
+
+/* =====================================================
+SCREEN SHARE VIEWER
+===================================================== */
+
+.rtc-screen-share-viewer {
+
+
+position: absolute;
+
+inset: 0;
+
+z-index: 100;
+
+display: flex;
+
+flex-direction: column;
+
+min-width: 0;
+
+min-height: 0;
+
+background: #171923;
+
+border-radius: 12px;
+
+overflow: hidden;
+
+box-shadow:
+    0 10px 30px rgba(
+        0,
+        0,
+        0,
+        0.30
+    );
+
+box-sizing: border-box;
+
+
+}
+
+/* =====================================================
+VIEWER HEADER
+===================================================== */
+
+.rtc-screen-share-viewer-header {
+
+
+display: flex;
+
+align-items: center;
+
+justify-content: space-between;
+
+flex-shrink: 0;
+
+height: 42px;
+
+padding: 0 14px;
+
+color: white;
+
+font-size: 12px;
+
+box-sizing: border-box;
+
+
+}
+
+/* =====================================================
+LIVE INDICATOR
+===================================================== */
+
+.rtc-screen-share-live {
+
+
+font-size: 10px;
+
+font-weight: 700;
+
+letter-spacing: 0.06em;
+
+
+}
+
+/* =====================================================
+SCREEN CARDS CONTAINER
+===================================================== */
+
+.rtc-screen-share-videos {
+
+
+display: grid;
+
+grid-template-columns:
+    repeat(
+        auto-fit,
+        minmax(300px, 1fr)
+    );
+
+gap: 20px;
+
+flex: 1;
+
+min-width: 0;
+
+min-height: 0;
+
+padding: 20px;
+
+overflow-y: auto;
+
+overflow-x: hidden;
+
+box-sizing: border-box;
+
+scrollbar-width: thin;
+
+
+}
+
+/* =====================================================
+INDIVIDUAL SCREEN CARD
+===================================================== */
+
+.rtc-screen-share-card {
+
+
+position: relative;
+
+min-width: 0;
+
+background: #0b0c10;
+
+border: 1px solid rgba(
+    255,
+    255,
+    255,
+    0.08
+);
+
+border-radius: 10px;
+
+overflow: hidden;
+
+box-shadow:
+    0 6px 20px rgba(
+        0,
+        0,
+        0,
+        0.25
+    );
+
+align-self: start;
+
+
+}
+
+/* =====================================================
+CARD HEADER
+===================================================== */
+
+.rtc-screen-share-card-header {
+
+
+height: 38px;
+
+display: flex;
+
+align-items: center;
+
+justify-content: space-between;
+
+padding: 0 10px;
+
+box-sizing: border-box;
+
+background: #171923;
+
+color: white;
+
+font-size: 11px;
+
+
+}
+
+/* =====================================================
+USER NAME
+===================================================== */
+
+.rtc-screen-share-user-name {
+
+
+min-width: 0;
+
+max-width: calc(
+    100% - 70px
+);
+
+overflow: hidden;
+
+white-space: nowrap;
+
+text-overflow: ellipsis;
+
+font-weight: 500;
+
+
+}
+
+/* =====================================================
+CARD ACTIONS
+===================================================== */
+
+.rtc-screen-share-card-actions {
+
+
+display: flex;
+
+align-items: center;
+
+gap: 4px;
+
+flex-shrink: 0;
+
+
+}
+
+.rtc-screen-share-card-actions button {
+
+
+width: 26px;
+
+height: 26px;
+
+display: flex;
+
+align-items: center;
+
+justify-content: center;
+
+border: none;
+
+border-radius: 6px;
+
+background: transparent;
+
+color: #b8bdc9;
+
+font-size: 12px;
+
+cursor: pointer;
+
+transition:
+    background 0.15s ease,
+    color 0.15s ease;
+
+
+}
+
+.rtc-screen-share-card-actions button:hover {
+
+
+background: rgba(
+    255,
+    255,
+    255,
+    0.1
+);
+
+color: white;
+
+
+}
+
+/* =====================================================
+DANGER / CLOSE / STOP
+===================================================== */
+
+.rtc-screen-share-card-actions
+button.danger:hover {
+
+
+background: rgba(
+    239,
+    68,
+    68,
+    0.18
+);
+
+color: #ff6b6b;
+
+
+}
+
+/* =====================================================
+SCREEN VIDEO
+===================================================== */
+
+.rtc-screen-share-video {
+
+
+display: block;
+
+width: 100%;
+
+aspect-ratio: 16 / 9;
+
+height: auto;
+
+object-fit: contain;
+
+background: #000;
+
+
+}
+
+/* =====================================================
+HIDDEN REMOTE SCREEN
+===================================================== */
+
+.rtc-screen-share-card.hidden {
+
+
+min-height: 100px;
+
+
+}
+
+.rtc-screen-share-hidden {
+
+
+min-height: 160px;
+
+display: flex;
+
+flex-direction: column;
+
+align-items: center;
+
+justify-content: center;
+
+gap: 10px;
+
+padding: 20px;
+
+box-sizing: border-box;
+
+background: #0b0c10;
+
+color: #aeb4c0;
+
+font-size: 11px;
+
+text-align: center;
+
+
+}
+
+.rtc-screen-share-hidden button {
+
+
+padding: 6px 12px;
+
+border: none;
+
+border-radius: 6px;
+
+background: #6366f1;
+
+color: white;
+
+font-size: 11px;
+
+cursor: pointer;
+
+
+}
+
+.rtc-screen-share-hidden button:hover {
+
+
+background: #5558e8;
+
+
+}
+
+/* =====================================================
+SCROLLBAR
+===================================================== */
+
+.rtc-screen-share-videos::-webkit-scrollbar {
+
+
+width: 7px;
+
+
+}
+
+.rtc-screen-share-videos::-webkit-scrollbar-thumb {
+
+
+background: rgba(
+    255,
+    255,
+    255,
+    0.25
+);
+
+border-radius: 10px;
+
+
+}
+
+.rtc-screen-share-videos::-webkit-scrollbar-thumb:hover {
+
+
+background: rgba(
+    255,
+    255,
+    255,
+    0.35
+);
+
+
+}
+
+.rtc-screen-share-videos::-webkit-scrollbar-track {
+
+
+background: transparent;
+
+
+}
+
+/* =====================================================
+TABLET
+===================================================== */
+
+@media (max-width: 900px) {
+
+
+.rtc-screen-share-viewer {
+
+    border-radius: 10px;
+
+}
+
+
+.rtc-screen-share-videos {
+
+    grid-template-columns:
+        repeat(
+            auto-fit,
+            minmax(240px, 1fr)
+        );
+
+    gap: 16px;
+
+    padding: 16px;
+
+}
+
+
+.rtc-screen-share-card-header {
+
+    height: 36px;
+
+}
+
+
+}
+
+/* =====================================================
+MOBILE
+===================================================== */
+
+@media (max-width: 600px) {
+
+
+.rtc-screen-share-viewer {
+
+    border-radius: 9px;
+
+}
+
+
+.rtc-screen-share-viewer-header {
+
+    height: 40px;
+
+    padding: 0 10px;
+
+    font-size: 11px;
+
+}
+
+
+.rtc-screen-share-videos {
+
+    grid-template-columns: 1fr;
+
+    gap: 14px;
+
+    padding: 12px;
+
+}
+
+
+.rtc-screen-share-video {
+
+    aspect-ratio: 16 / 9;
+
+}
+
+
+.rtc-screen-share-card-header {
+
+    height: 36px;
+
+    padding: 0 8px;
+
+}
+
+
+.rtc-screen-share-card-actions button {
+
+    width: 25px;
+
+    height: 25px;
+
+}
+
+
+}
+
+/* =====================================================
+VERY SMALL MOBILE
+===================================================== */
+
+@media (max-width: 380px) {
+
+
+.rtc-screen-share-videos {
+
+    gap: 12px;
+
+    padding: 9px;
+
+}
+
+
+.rtc-screen-share-viewer-header {
+
+    height: 38px;
+
+    padding: 0 8px;
+
+}
+
+
+.rtc-screen-share-hidden {
+
+    min-height: 130px;
+
+}
+
+
+}

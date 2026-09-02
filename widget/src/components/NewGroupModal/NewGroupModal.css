@@ -1,0 +1,232 @@
+/* ================================
+   Inputs
+================================ */
+
+.rtc-group-name-input,
+.rtc-user-search {
+    width: 100%;
+
+    box-sizing: border-box;
+
+    padding: 12px 14px;
+
+    border: 1px solid #dcdcdc;
+
+    border-radius: 8px;
+
+    margin-bottom: 14px;
+
+    outline: none;
+
+    font-size: 14px;
+}
+
+.rtc-group-name-input:focus,
+.rtc-user-search:focus {
+    border-color: #516eac;
+}
+
+
+/* ================================
+   Selected Members
+================================ */
+
+.rtc-selected-members {
+    display: flex;
+
+    flex-wrap: wrap;
+
+    gap: 8px;
+
+    margin-bottom: 15px;
+}
+
+
+/* ================================
+   Member Chip
+================================ */
+
+.rtc-member-chip {
+    display: flex;
+
+    align-items: center;
+
+    gap: 8px;
+
+    background: #eaf2ff;
+
+    padding: 6px 12px;
+
+    border-radius: 20px;
+
+    font-size: 14px;
+}
+
+.rtc-member-chip button {
+    border: none;
+
+    background: none;
+
+    cursor: pointer;
+
+    color: #555;
+
+    font-size: 14px;
+
+    padding: 0;
+}
+
+.rtc-member-chip button:hover {
+    color: #222;
+}
+
+.rtc-member-chip button:disabled {
+    cursor: not-allowed;
+
+    opacity: 0.5;
+}
+
+
+/* ================================
+   User List
+================================ */
+
+.rtc-user-list {
+    max-height: 280px;
+
+    overflow-y: auto;
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 6px;
+}
+
+
+/* ================================
+   User Item
+================================ */
+
+.rtc-user-item {
+    width: 100%;
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 12px;
+
+    padding: 12px;
+
+    border: none;
+
+    border-radius: 8px;
+
+    background: transparent;
+
+    color: #222;
+
+    cursor: pointer;
+
+    text-align: left;
+
+    font-size: 14px;
+
+    transition: background 0.2s ease;
+}
+
+.rtc-user-item:hover:not(:disabled) {
+    background: #f5f7fb;
+}
+
+.rtc-user-item:focus-visible {
+    outline: 2px solid #6993ef;
+
+    outline-offset: 2px;
+}
+
+.rtc-user-item:disabled {
+    cursor: not-allowed;
+
+    opacity: 0.6;
+}
+
+
+/* Selected user */
+
+.rtc-user-item.rtc-selected-user {
+    background: #e8f2ff;
+}
+
+
+/* ================================
+   Avatar
+================================ */
+
+.rtc-user-avatar {
+    width: 42px;
+    height: 42px;
+
+    border-radius: 50%;
+
+    background: #809ef5;
+
+    color: white;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    font-weight: 600;
+
+    flex-shrink: 0;
+}
+
+
+/* ================================
+   User Name
+================================ */
+
+.rtc-user-name {
+    flex: 1;
+
+    min-width: 0;
+
+    overflow: hidden;
+
+    white-space: nowrap;
+
+    text-overflow: ellipsis;
+}
+
+
+/* ================================
+   Check Mark
+================================ */
+
+.rtc-check {
+    color: #2563eb;
+
+    font-weight: 700;
+
+    font-size: 18px;
+
+    flex-shrink: 0;
+}
+
+
+/* ================================
+   No Users
+================================ */
+
+.rtc-no-users {
+    padding: 20px;
+
+    text-align: center;
+
+    color: #888;
+
+    font-size: 14px;
+}

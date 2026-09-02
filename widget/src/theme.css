@@ -1,0 +1,375 @@
+.rtc-widget-container {
+    --rtc-bg: #eceaf2;
+    --rtc-surface: #f5f3f8;
+    --rtc-surface-muted: #e7e4ee;
+    --rtc-border: #d3cfdf;
+    --rtc-text: #2d2840;
+    --rtc-text-muted: #6f697d;
+    --rtc-accent: #55408f;
+    --rtc-accent-strong: #3e2c70;
+    --rtc-accent-soft: #eeeafb;
+    --rtc-bubble-mine: #d9fdd3;
+    --rtc-bubble-other: #ffffff;
+    --rtc-message-bg: #e7e2db;
+    --rtc-accent-shadow: rgba(85, 64, 143, 0.22);
+    --rtc-font: "Trebuchet MS", "Segoe UI", sans-serif;
+
+    font-family: var(--rtc-font);
+    background: var(--rtc-bg);
+    color: var(--rtc-text);
+    color-scheme: light;
+}
+
+.rtc-widget-container[data-theme="dark"] {
+    --rtc-bg: #211d2a;
+    --rtc-surface: #2b2638;
+    --rtc-surface-muted: #332d42;
+    --rtc-border: #4a425b;
+    --rtc-text: #f0edf5;
+    --rtc-text-muted: #b5aec2;
+    --rtc-accent: #9675d5;
+    --rtc-accent-strong: #b394ef;
+    --rtc-accent-soft: #3c3153;
+    --rtc-bubble-mine: #245c4b;
+    --rtc-bubble-other: #332d40;
+    --rtc-message-bg: #17141d;
+    --rtc-accent-shadow: rgba(150, 117, 213, 0.26);
+    color-scheme: dark;
+}
+
+.rtc-widget-container[data-theme="night"] {
+    --rtc-bg: #12101c;
+    --rtc-surface: #1c1830;
+    --rtc-surface-muted: #25203d;
+    --rtc-border: #383052;
+    --rtc-text: #f6f2ff;
+    --rtc-text-muted: #aaa1c2;
+    --rtc-accent: #a98be8;
+    --rtc-accent-strong: #c4aaf7;
+    --rtc-accent-soft: #302750;
+    --rtc-bubble-mine: #194f47;
+    --rtc-bubble-other: #26213c;
+    --rtc-message-bg: #0c0a13;
+    --rtc-accent-shadow: rgba(169, 139, 232, 0.25);
+    color-scheme: dark;
+}
+
+.rtc-widget-container[data-theme="dark"],
+.rtc-widget-container[data-theme="night"] {
+    background: var(--rtc-bg);
+    border-color: var(--rtc-border);
+}
+
+.rtc-widget-container[data-theme="dark"] .rtc-sidebar,
+.rtc-widget-container[data-theme="night"] .rtc-sidebar,
+.rtc-widget-container[data-theme="dark"] .rtc-sidebar-header,
+.rtc-widget-container[data-theme="night"] .rtc-sidebar-header,
+.rtc-widget-container[data-theme="dark"] .rtc-chat-header,
+.rtc-widget-container[data-theme="night"] .rtc-chat-header,
+.rtc-widget-container[data-theme="dark"] .rtc-chat-input-container,
+.rtc-widget-container[data-theme="night"] .rtc-chat-input-container {
+    background: var(--rtc-surface);
+    border-color: var(--rtc-border);
+    color: var(--rtc-text);
+}
+
+.rtc-widget-container[data-theme="dark"] .rtc-chat-widget,
+.rtc-widget-container[data-theme="night"] .rtc-chat-widget {
+    background: var(--rtc-message-bg);
+    color: var(--rtc-text);
+}
+
+.rtc-widget-container[data-theme="dark"] .rtc-message-list,
+.rtc-widget-container[data-theme="night"] .rtc-message-list {
+    background: var(--rtc-message-bg);
+}
+
+.rtc-widget-container[data-theme="dark"] .rtc-message.rtc-mine .rtc-bubble,
+.rtc-widget-container[data-theme="night"] .rtc-message.rtc-mine .rtc-bubble {
+    background: var(--rtc-bubble-mine);
+    color: var(--rtc-text);
+}
+
+.rtc-widget-container[data-theme="dark"] .rtc-message.rtc-other .rtc-bubble,
+.rtc-widget-container[data-theme="night"] .rtc-message.rtc-other .rtc-bubble {
+    background: var(--rtc-bubble-other);
+    color: var(--rtc-text);
+}
+
+.rtc-widget-container[data-theme="dark"] .rtc-conversation-list,
+.rtc-widget-container[data-theme="night"] .rtc-conversation-list,
+.rtc-widget-container[data-theme="dark"] .rtc-conversation-item,
+.rtc-widget-container[data-theme="night"] .rtc-conversation-item {
+    background: var(--rtc-surface);
+    color: var(--rtc-text);
+}
+
+.rtc-widget-container[data-theme="dark"] .rtc-conversation-item.selected,
+.rtc-widget-container[data-theme="night"] .rtc-conversation-item.selected,
+.rtc-widget-container[data-theme="dark"] .rtc-conversation-item:hover,
+.rtc-widget-container[data-theme="night"] .rtc-conversation-item:hover {
+    background: var(--rtc-accent-soft);
+}
+
+.rtc-widget-container[data-theme="dark"] .rtc-conversation-name,
+.rtc-widget-container[data-theme="night"] .rtc-conversation-name,
+.rtc-widget-container[data-theme="dark"] .rtc-conversation-preview,
+.rtc-widget-container[data-theme="night"] .rtc-conversation-preview,
+.rtc-widget-container[data-theme="dark"] .rtc-chat-details h2,
+.rtc-widget-container[data-theme="night"] .rtc-chat-details h2 {
+    color: var(--rtc-text);
+}
+
+.rtc-widget-container[data-theme="dark"] .rtc-chat-input,
+.rtc-widget-container[data-theme="night"] .rtc-chat-input {
+    background: var(--rtc-surface-muted);
+    border-color: var(--rtc-border);
+    color: var(--rtc-text);
+}
+
+.rtc-widget-container[data-theme="dark"] .announcement-portal,
+.rtc-widget-container[data-theme="night"] .announcement-portal,
+.rtc-widget-container[data-theme="dark"] .announcement-header,
+.rtc-widget-container[data-theme="night"] .announcement-header,
+.rtc-widget-container[data-theme="dark"] .announcement-portals,
+.rtc-widget-container[data-theme="night"] .announcement-portals,
+.rtc-widget-container[data-theme="dark"] .announcement-content,
+.rtc-widget-container[data-theme="night"] .announcement-content,
+.rtc-widget-container[data-theme="dark"] .announcement-list,
+.rtc-widget-container[data-theme="night"] .announcement-list {
+    background: var(--rtc-bg);
+    color: var(--rtc-text);
+    border-color: var(--rtc-border);
+}
+
+.rtc-widget-container[data-theme="dark"] .announcement-portal-item,
+.rtc-widget-container[data-theme="night"] .announcement-portal-item,
+.rtc-widget-container[data-theme="dark"] .announcement-content-header,
+.rtc-widget-container[data-theme="night"] .announcement-content-header,
+.rtc-widget-container[data-theme="dark"] .announcement-portal-members,
+.rtc-widget-container[data-theme="night"] .announcement-portal-members {
+    background: var(--rtc-surface);
+    color: var(--rtc-text);
+    border-color: var(--rtc-border);
+}
+
+.rtc-widget-container[data-theme="dark"] .announcement-portal-item span,
+.rtc-widget-container[data-theme="night"] .announcement-portal-item span,
+.rtc-widget-container[data-theme="dark"] .announcement-header h2,
+.rtc-widget-container[data-theme="night"] .announcement-header h2,
+.rtc-widget-container[data-theme="dark"] .announcement-content-header h3,
+.rtc-widget-container[data-theme="night"] .announcement-content-header h3 {
+    color: var(--rtc-text);
+}
+
+.rtc-widget-container[data-theme="dark"] .announcement-card,
+.rtc-widget-container[data-theme="night"] .announcement-card,
+.rtc-widget-container[data-theme="dark"] .announcement-modal,
+.rtc-widget-container[data-theme="night"] .announcement-modal,
+.rtc-widget-container[data-theme="dark"] .create-portal-modal,
+.rtc-widget-container[data-theme="night"] .create-portal-modal {
+    background: var(--rtc-surface);
+    color: var(--rtc-text);
+    border-color: var(--rtc-border);
+}
+
+.rtc-widget-container[data-theme="dark"] .announcement-card-content,
+.rtc-widget-container[data-theme="night"] .announcement-card-content,
+.rtc-widget-container[data-theme="dark"] .announcement-card-heading h3,
+.rtc-widget-container[data-theme="night"] .announcement-card-heading h3 {
+    color: var(--rtc-text);
+}
+
+.rtc-widget-container[data-theme="dark"] .rtc-members-panel,
+.rtc-widget-container[data-theme="night"] .rtc-members-panel {
+    background: var(--rtc-surface);
+    border-color: var(--rtc-border);
+}
+
+/* Shared premium surface system */
+
+.rtc-widget-container {
+    letter-spacing: 0;
+    -webkit-font-smoothing: antialiased;
+}
+
+.rtc-widget-container .rtc-sidebar,
+.rtc-widget-container .rtc-chat-widget,
+.rtc-widget-container .announcement-portal {
+    background: var(--rtc-bg);
+}
+
+.rtc-widget-container .rtc-sidebar-header,
+.rtc-widget-container .rtc-chat-header,
+.rtc-widget-container .rtc-chat-input-container,
+.rtc-widget-container .announcement-header,
+.rtc-widget-container .announcement-portals {
+    border-color: var(--rtc-border);
+}
+
+.rtc-widget-container .rtc-sidebar-title h3,
+.rtc-widget-container .rtc-chat-details h2,
+.rtc-widget-container .announcement-header h2 {
+    color: var(--rtc-text);
+    letter-spacing: 0;
+}
+
+.rtc-widget-container .rtc-sidebar-buttons button,
+.rtc-widget-container .rtc-send-button {
+    background: var(--rtc-accent);
+    box-shadow: 0 5px 12px var(--rtc-accent-shadow);
+}
+
+.rtc-widget-container .rtc-sidebar-buttons button:hover,
+.rtc-widget-container .rtc-send-button:hover:not(:disabled) {
+    background: var(--rtc-accent-strong);
+}
+
+.rtc-widget-container .rtc-conversation-item {
+    border-left-color: transparent;
+    transition: background 0.18s ease, border-color 0.18s ease;
+}
+
+.rtc-widget-container .rtc-conversation-item:hover,
+.rtc-widget-container .rtc-conversation-item.selected {
+    background: var(--rtc-accent-soft);
+}
+
+.rtc-widget-container .rtc-conversation-item.selected {
+    border-left-color: var(--rtc-accent);
+}
+
+.rtc-widget-container .rtc-conversation-avatar,
+.rtc-widget-container .rtc-chat-avatar,
+.rtc-widget-container .rtc-member-avatar {
+    background: var(--rtc-accent);
+    box-shadow: 0 4px 10px var(--rtc-accent-shadow);
+}
+
+.rtc-widget-container .rtc-conversation-name,
+.rtc-widget-container .rtc-conversation-item.selected .rtc-conversation-name {
+    color: var(--rtc-text);
+}
+
+.rtc-widget-container .rtc-conversation-time,
+.rtc-widget-container .rtc-conversation-preview,
+.rtc-widget-container .rtc-chat-details p,
+.rtc-widget-container .rtc-sender {
+    color: var(--rtc-text-muted);
+}
+
+.rtc-widget-container .rtc-message-list {
+    background: var(--rtc-message-bg);
+}
+
+.rtc-widget-container .rtc-message.rtc-mine .rtc-bubble {
+    background: var(--rtc-bubble-mine);
+    color: var(--rtc-text);
+    border-bottom-right-radius: 5px;
+}
+
+.rtc-widget-container .rtc-message.rtc-other .rtc-bubble {
+    background: var(--rtc-bubble-other);
+    color: var(--rtc-text);
+    border-bottom-left-radius: 5px;
+}
+
+.rtc-widget-container .rtc-chat-input {
+    background: var(--rtc-surface);
+    border-color: var(--rtc-border);
+    color: var(--rtc-text);
+}
+
+.rtc-widget-container input::placeholder,
+.rtc-widget-container textarea::placeholder {
+    color: var(--rtc-text-muted);
+    opacity: 0.8;
+}
+
+.rtc-widget-container button,
+.rtc-widget-container input,
+.rtc-widget-container textarea,
+.rtc-widget-container select {
+    font-family: inherit;
+}
+
+.rtc-widget-container button:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+}
+
+.rtc-widget-container :where(*):focus-visible {
+    outline-color: var(--rtc-accent);
+}
+
+.rtc-widget-container .rtc-chat-input:focus {
+    border-color: var(--rtc-accent);
+    box-shadow: 0 0 0 3px var(--rtc-accent-shadow);
+}
+
+.rtc-widget-container .rtc-file-button,
+.rtc-widget-container .rtc-chat-back-button,
+.rtc-widget-container .rtc-chat-menu-button {
+    color: var(--rtc-text-muted);
+}
+
+.rtc-widget-container .rtc-file-button:hover,
+.rtc-widget-container .rtc-chat-back-button:hover,
+.rtc-widget-container .rtc-chat-menu-button:hover {
+    background: var(--rtc-accent-soft);
+    color: var(--rtc-accent);
+}
+
+.rtc-widget-container .announcement-content-header,
+.rtc-widget-container .announcement-portal-members {
+    background: var(--rtc-surface);
+    border-color: var(--rtc-border);
+}
+
+.rtc-widget-container .announcement-portal-item {
+    border-color: var(--rtc-border);
+    background: var(--rtc-surface);
+}
+
+.rtc-widget-container .announcement-portal-item:hover,
+.rtc-widget-container .announcement-portal-item.active {
+    border-color: var(--rtc-accent);
+    background: var(--rtc-accent-soft);
+}
+
+.rtc-widget-container .announcement-card {
+    border-color: #c8e2c4;
+    background: var(--rtc-bubble-mine);
+    box-shadow: 0 3px 10px rgba(25, 60, 38, 0.08);
+}
+
+.rtc-widget-container .announcement-card:hover {
+    border-color: #a9d1a5;
+    box-shadow: 0 6px 16px rgba(25, 60, 38, 0.12);
+}
+
+.rtc-widget-container .announcement-modal,
+.rtc-widget-container .create-portal-modal {
+    border: 1px solid var(--rtc-border);
+    border-radius: 14px;
+    box-shadow: 0 18px 48px rgba(33, 25, 58, 0.22);
+}
+
+.rtc-widget-container button:focus-visible,
+.rtc-popup button:focus-visible,
+.rtc-popup input:focus-visible,
+.rtc-popup textarea:focus-visible,
+.rtc-popup select:focus-visible {
+    outline: 2px solid var(--rtc-accent);
+    outline-offset: 2px;
+}
+
+@media (max-width: 768px) {
+    .rtc-widget-container .rtc-sidebar-header {
+        padding: 14px;
+    }
+
+    .rtc-widget-container .rtc-chat-header {
+        padding: 11px 14px;
+    }
+}

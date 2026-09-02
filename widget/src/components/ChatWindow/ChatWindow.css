@@ -1,0 +1,413 @@
+.rtc-chat-widget {
+    position: relative;
+
+    display: flex;
+    flex-direction: column;
+
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+
+    flex: 1;
+
+    background: #e7e2db;
+
+    color: #252832;
+}
+
+/* ================================
+   Header
+================================ */
+
+.rtc-chat-header {
+    flex-shrink: 0;
+
+    display: flex;
+    align-items: center;
+
+    gap: 15px;
+
+    padding: 14px 20px;
+
+    border-bottom: 1px solid #e4e0ed;
+
+    background: #f5f3f8;
+
+    box-shadow:
+        0 1px 4px rgba(30, 35, 50, 0.04);
+
+    z-index: 2;
+}
+
+
+/* ================================
+   Chat Avatar
+================================ */
+
+.rtc-chat-avatar {
+    width: 48px;
+    height: 48px;
+
+    flex-shrink: 0;
+
+    border-radius: 50%;
+
+    background: #55408f;
+
+    color: white;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    font-size: 21px;
+    font-weight: 600;
+
+    box-shadow:
+        0 4px 10px rgba(85, 64, 143, 0.20);
+
+    transition:
+        transform 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+.rtc-chat-avatar:hover {
+    transform: scale(1.05);
+
+    box-shadow:
+        0 6px 14px rgba(85, 64, 143, 0.26);
+}
+
+
+/* ================================
+   Chat Details
+================================ */
+
+.rtc-chat-details {
+    min-width: 0;
+}
+
+.rtc-chat-details h2 {
+    margin: 0;
+
+    font-size: 18px;
+    font-weight: 600;
+
+    color: #2d2840;
+
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.rtc-chat-details p {
+    margin: 4px 0 0;
+
+    color: #7b8190;
+
+    font-size: 13px;
+
+    transition: color 0.2s ease;
+}
+
+
+/* ================================
+   Empty Chat
+================================ */
+
+.rtc-chat-widget.rtc-empty-chat {
+    display: flex;
+
+    justify-content: center;
+    align-items: center;
+
+    background:
+        radial-gradient(
+            circle at center,
+            #e8e5f0 0%,
+            #ffffff 60%
+        );
+}
+
+.rtc-empty-chat-content {
+    text-align: center;
+
+    color: #858b98;
+
+    animation: rtc-empty-fade 0.35s ease-out;
+}
+
+.rtc-empty-icon {
+    font-size: 60px;
+
+    margin-bottom: 20px;
+
+    opacity: 0.8;
+
+    animation: rtc-empty-float 2.5s ease-in-out infinite;
+}
+
+
+/* Empty chat animations */
+
+@keyframes rtc-empty-fade {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes rtc-empty-float {
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-5px);
+    }
+}
+
+
+/* ================================
+   Back Button
+================================ */
+
+.rtc-chat-back-button {
+    width: 34px;
+    height: 34px;
+
+    flex-shrink: 0;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border: none;
+    border-radius: 9px;
+
+    background: transparent;
+
+    color: #69707d;
+
+    font-size: 20px;
+
+    cursor: pointer;
+
+    transition:
+        background 0.2s ease,
+        color 0.2s ease,
+        transform 0.15s ease;
+}
+
+.rtc-chat-back-button:hover {
+    background: #eef0ff;
+
+    color: #6366f1;
+
+    transform: translateX(-2px);
+}
+
+.rtc-chat-back-button:active {
+    transform: scale(0.92);
+}
+
+
+/* ================================
+   Mobile Back Button
+================================ */
+
+.rtc-back-mobile {
+    display: inline;
+}
+
+.rtc-back-desktop {
+    display: none;
+}
+
+
+/* ================================
+   Desktop
+================================ */
+
+@media (min-width: 769px) {
+
+    .rtc-back-mobile {
+        display: none;
+    }
+
+    .rtc-back-desktop {
+        display: inline;
+
+        font-size: 17px;
+    }
+}
+
+
+/* ================================
+   Three Dot / Members Toggle
+================================ */
+
+.rtc-chat-menu-button {
+    width: 38px;
+    height: 38px;
+
+    margin-left: auto;
+
+    flex-shrink: 0;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border: 1px solid transparent;
+    border-radius: 10px;
+
+    background: transparent;
+
+    color: #69707d;
+
+    font-size: 24px;
+    font-weight: 700;
+    line-height: 1;
+
+    cursor: pointer;
+
+    transition:
+        background 0.2s ease,
+        color 0.2s ease,
+        border-color 0.2s ease,
+        transform 0.15s ease,
+        box-shadow 0.2s ease;
+}
+
+
+/* Hover */
+
+.rtc-chat-menu-button:hover {
+    background: #eef0ff;
+
+    border-color: #e2e4ff;
+
+    color: #6366f1;
+
+    box-shadow:
+        0 3px 8px rgba(99, 102, 241, 0.12);
+
+    transform: translateY(-1px);
+}
+
+
+/* Active / Click */
+
+.rtc-chat-menu-button:active {
+    transform: scale(0.90);
+
+    box-shadow: none;
+}
+
+
+/* Members panel is open */
+
+.rtc-chat-menu-button[aria-expanded="true"] {
+    background: #6366f1;
+
+    border-color: #6366f1;
+
+    color: #ffffff;
+
+    box-shadow:
+        0 4px 10px rgba(99, 102, 241, 0.22);
+}
+
+
+/* Keyboard focus */
+
+.rtc-chat-menu-button:focus-visible {
+    outline: none;
+
+    border-color: #6366f1;
+
+    box-shadow:
+        0 0 0 3px rgba(99, 102, 241, 0.15);
+}
+
+
+
+
+/* ================================
+   SCREEN SHARE TOGGLE
+================================ */
+
+.rtc-call-toggle-button {
+    width: 38px;
+    height: 38px;
+
+    flex-shrink: 0;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border: none;
+    border-radius: 9px;
+
+    background: transparent;
+
+    color: #69707d;
+
+    font-size: 17px;
+
+    cursor: pointer;
+
+    transition:
+        background 0.2s ease,
+        color 0.2s ease,
+        transform 0.15s ease;
+}
+
+.rtc-call-toggle-button:hover {
+    background: #eef0ff;
+
+    color: #6366f1;
+}
+
+.rtc-call-toggle-button.active {
+    background: #6366f1;
+
+    color: white;
+}
+
+.rtc-call-toggle-button:active {
+    transform: scale(0.92);
+}
+
+
+/* ================================
+   SCREEN SHARE SPACE
+================================ */
+
+.rtc-screen-share-space {
+    display: none;
+
+    flex: 1;
+
+    min-height: 0;
+
+    position: relative;
+
+    overflow: hidden;
+
+    background: #171923;
+}
+
+.rtc-screen-share-space.visible {
+    display: flex;
+
+    flex-direction: column;
+}

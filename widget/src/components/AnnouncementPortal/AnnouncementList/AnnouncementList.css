@@ -1,0 +1,161 @@
+/* =========================================================
+    Announcement List
+    ========================================================= */
+
+.announcement-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 16px 20px 24px;
+    background: #f7f8fa;
+    overflow-y: auto;
+}
+
+.announcement-list::-webkit-scrollbar {
+    width: 5px;
+}
+
+.announcement-list::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 10px;
+}
+
+.announcement-list-loading,
+.announcement-list-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 180px;
+    padding: 30px 20px;
+    text-align: center;
+}
+
+.announcement-list-loading {
+    color: #64748b;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.announcement-list-empty {
+    min-height: 260px;
+}
+
+.announcement-list-empty-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 52px;
+    height: 52px;
+    margin-bottom: 14px;
+    border: 1px solid #e2e8f0;
+    border-radius: 50%;
+    background: #ffffff;
+    font-size: 22px;
+}
+
+.announcement-list-empty h3 {
+    margin: 0;
+    color: #334155;
+    font-size: 14px;
+    font-weight: 650;
+}
+
+.announcement-list-empty p {
+    max-width: 300px;
+    margin: 6px 0 0;
+    color: #94a3b8;
+    font-size: 11px;
+    line-height: 1.55;
+}
+
+.announcement-list .announcement-card-shell {
+    width: 100%;
+}
+
+.announcement-list .announcement-author {
+    margin: 0 8px 3px;
+    font-size: 9px;
+}
+
+.announcement-list .announcement-author time {
+    font-size: 8px;
+}
+
+.announcement-list .announcement-card {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #c8e2c4;
+    border-radius: 8px;
+    background: #d9fdd3;
+    box-shadow: 0 3px 10px rgba(25, 60, 38, 0.08);
+}
+
+.announcement-list .announcement-card:hover {
+    border-color: #a9d1a5;
+    box-shadow: 0 6px 16px rgba(25, 60, 38, 0.12);
+}
+
+.announcement-list .announcement-card-header {
+    gap: 10px;
+    margin-bottom: 6px;
+}
+
+.announcement-list .announcement-card-header h3 {
+    font-size: 13px;
+    line-height: 1.3;
+}
+
+.announcement-list .announcement-card-content {
+    font-size: 12px;
+    line-height: 1.45;
+}
+
+.announcement-list .announcement-card-actions {
+    gap: 3px;
+}
+
+.announcement-list .announcement-edit-button,
+.announcement-list .announcement-delete-button {
+    width: 22px;
+    height: 22px;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    font-size: 12px;
+}
+
+.announcement-list .announcement-audience {
+    margin-top: 7px;
+    padding: 3px 7px;
+    border: 0;
+    border-radius: 10px;
+    background: #bff1b7;
+    font-size: 8px;
+}
+
+@media (max-width: 768px) {
+    .announcement-list {
+        gap: 10px;
+        padding: 12px;
+    }
+}
+
+@media (max-width: 480px) {
+    .announcement-list {
+        padding: 10px;
+    }
+
+    .announcement-list .announcement-card {
+        padding: 8px 10px;
+    }
+
+    .announcement-list .announcement-card-header h3 {
+        font-size: 12px;
+    }
+
+    .announcement-list .announcement-card-content {
+        font-size: 11.5px;
+        line-height: 1.5;
+    }
+}

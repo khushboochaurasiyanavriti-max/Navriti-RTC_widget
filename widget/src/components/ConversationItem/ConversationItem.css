@@ -1,0 +1,178 @@
+.rtc-conversation-item {
+    display: flex;
+    align-items: center;
+
+    gap: 12px;
+
+    padding: 11px 14px;
+
+    cursor: pointer;
+
+    border-left: 4px solid transparent;
+
+    transition:
+        background 0.2s ease,
+        border-color 0.2s ease,
+        transform 0.15s ease;
+}
+
+.rtc-conversation-item:hover {
+    background: #f1effa;
+
+    transform: translateX(2px);
+}
+
+.rtc-conversation-item.selected {
+    background: #eeeafb;
+
+    border-left: 4px solid #55408f;
+
+    box-shadow:
+        inset 0 0 0 1px rgba(99, 102, 241, 0.04);
+}
+
+
+/* ================================
+   Avatar
+================================ */
+
+.rtc-conversation-avatar {
+    width: 46px;
+    height: 46px;
+
+    border-radius: 50%;
+
+    background: #55408f;
+
+    color: white;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    font-size: 18px;
+    font-weight: 600;
+
+    flex-shrink: 0;
+
+    box-shadow:
+        0 3px 8px rgba(99, 102, 241, 0.16);
+
+    transition:
+        transform 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+.rtc-conversation-item:hover .rtc-conversation-avatar {
+    transform: scale(1.05);
+
+    box-shadow:
+        0 5px 11px rgba(99, 102, 241, 0.22);
+}
+
+
+/* ================================
+   Conversation content
+================================ */
+
+.rtc-conversation-content {
+    flex: 1;
+
+    min-width: 0;
+
+    overflow: hidden;
+}
+
+
+/* ================================
+   Name
+================================ */
+
+.rtc-conversation-name {
+    font-size: 15px;
+    font-weight: 600;
+
+    color: #292d36;
+
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+
+    transition: color 0.2s ease;
+}
+
+.rtc-conversation-item:hover .rtc-conversation-name {
+    color: #3e2c70;
+}
+
+
+/* ================================
+   Top row
+================================ */
+
+.rtc-conversation-top {
+    display: flex;
+
+    justify-content: space-between;
+    align-items: center;
+
+    gap: 8px;
+}
+
+
+/* ================================
+   Time
+================================ */
+
+.rtc-conversation-time {
+    font-size: 11px;
+
+    color: #9298a5;
+
+    flex-shrink: 0;
+
+    transition: color 0.2s ease;
+}
+
+.rtc-conversation-item:hover .rtc-conversation-time {
+    color: #55408f;
+}
+
+
+/* ================================
+   Last message
+================================ */
+
+.rtc-conversation-preview {
+    margin-top: 4px;
+
+    color: #747a87;
+
+    font-size: 13px;
+
+    overflow: hidden;
+
+    white-space: nowrap;
+    text-overflow: ellipsis;
+
+    text-align: left;
+
+    transition: color 0.2s ease;
+}
+
+.rtc-conversation-item:hover .rtc-conversation-preview {
+    color: #626875;
+}
+
+
+/* ================================
+   Selected state
+================================ */
+
+.rtc-conversation-item.selected .rtc-conversation-name {
+    color: #4f46e5;
+}
+
+.rtc-conversation-item.selected .rtc-conversation-time {
+    color: #6366f1;
+}

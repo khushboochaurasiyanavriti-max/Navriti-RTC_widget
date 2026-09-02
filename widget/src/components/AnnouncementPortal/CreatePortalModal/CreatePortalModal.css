@@ -1,0 +1,754 @@
+/* =========================================================
+   Create Portal Modal
+   ========================================================= */
+
+.create-portal-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 20px;
+
+    background: rgba(15, 23, 42, 0.48);
+    backdrop-filter: blur(5px);
+
+    box-sizing: border-box;
+}
+
+
+/* =========================================================
+   Modal
+   ========================================================= */
+
+.create-portal-modal {
+    display: flex;
+    flex-direction: column;
+
+    width: 100%;
+    max-width: 520px;
+
+    max-height: calc(100vh - 40px);
+
+    overflow: hidden;
+
+    background: #ffffff;
+
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+
+    box-shadow:
+        0 24px 60px rgba(15, 23, 42, 0.18),
+        0 4px 12px rgba(15, 23, 42, 0.06);
+
+    animation: createPortalModalIn 0.18s ease-out;
+}
+
+@keyframes createPortalModalIn {
+    from {
+        opacity: 0;
+        transform: translateY(8px) scale(0.985);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+
+/* =========================================================
+   Header
+   ========================================================= */
+
+.create-portal-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+
+    gap: 16px;
+
+    padding: 18px 19px;
+
+    background: #ffffff;
+
+    border-bottom: 1px solid #e2e8f0;
+
+    flex-shrink: 0;
+}
+
+.create-portal-header h3 {
+    margin: 0;
+
+    color: #0f172a;
+
+    font-size: 17px;
+    font-weight: 700;
+    line-height: 1.35;
+
+    letter-spacing: -0.01em;
+}
+
+.create-portal-header p {
+    margin: 5px 0 0;
+
+    color: #64748b;
+
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+
+/* =========================================================
+   Close
+   ========================================================= */
+
+.create-portal-close {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    flex-shrink: 0;
+
+    width: 32px;
+    height: 32px;
+
+    padding: 0;
+
+    border: 1px solid transparent;
+    border-radius: 8px;
+
+    background: transparent;
+
+    color: #64748b;
+
+    font-size: 21px;
+    line-height: 1;
+
+    cursor: pointer;
+
+    transition:
+        background 0.15s ease,
+        border-color 0.15s ease,
+        color 0.15s ease,
+        transform 0.12s ease;
+}
+
+.create-portal-close:hover {
+    background: #f1f5f9;
+    border-color: #e2e8f0;
+
+    color: #0f172a;
+}
+
+.create-portal-close:active {
+    transform: scale(0.94);
+}
+
+.create-portal-close:focus-visible {
+    outline: 2px solid #94a3b8;
+    outline-offset: 2px;
+}
+
+
+/* =========================================================
+   Form
+   ========================================================= */
+
+.create-portal-form {
+    display: flex;
+    flex-direction: column;
+
+    min-height: 0;
+
+    overflow-y: auto;
+
+    padding: 19px;
+
+    gap: 16px;
+
+    background: #ffffff;
+}
+
+.create-portal-form::-webkit-scrollbar {
+    width: 6px;
+}
+
+.create-portal-form::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.create-portal-form::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 10px;
+}
+
+.create-portal-form::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+
+
+/* =========================================================
+   Labels
+   ========================================================= */
+
+.create-portal-form > label {
+    display: flex;
+    flex-direction: column;
+
+    gap: 7px;
+
+    color: #334155;
+
+    font-size: 12px;
+    font-weight: 650;
+}
+
+
+/* =========================================================
+   Inputs / Textarea / Select
+   ========================================================= */
+
+.create-portal-form input[type="text"],
+.create-portal-form textarea,
+.create-portal-form select {
+    width: 100%;
+
+    box-sizing: border-box;
+
+    padding: 9px 11px;
+
+    border: 1px solid #dbe2ea;
+    border-radius: 9px;
+
+    outline: none;
+
+    background: #ffffff;
+
+    color: #1e293b;
+
+    font-family: inherit;
+    font-size: 13px;
+
+    transition:
+        border-color 0.16s ease,
+        box-shadow 0.16s ease,
+        background 0.16s ease;
+}
+
+.create-portal-form input[type="text"] {
+    height: 39px;
+}
+
+.create-portal-form textarea {
+    min-height: 78px;
+
+    resize: vertical;
+}
+
+.create-portal-form select {
+    height: 39px;
+
+    cursor: pointer;
+}
+
+.create-portal-form input[type="text"]::placeholder,
+.create-portal-form textarea::placeholder {
+    color: #94a3b8;
+}
+
+.create-portal-form input[type="text"]:hover,
+.create-portal-form textarea:hover,
+.create-portal-form select:hover {
+    border-color: #cbd5e1;
+}
+
+.create-portal-form input[type="text"]:focus,
+.create-portal-form textarea:focus,
+.create-portal-form select:focus {
+    border-color: #64748b;
+
+    box-shadow:
+        0 0 0 3px rgba(100, 116, 139, 0.10);
+
+    background: #ffffff;
+}
+
+
+/* =========================================================
+   Error
+   ========================================================= */
+
+.create-portal-error {
+    padding: 10px 11px;
+
+    border: 1px solid #fecaca;
+    border-radius: 9px;
+
+    background: #fff7f7;
+
+    color: #b91c1c;
+
+    font-size: 12px;
+    line-height: 1.45;
+}
+
+
+/* =========================================================
+   Members Section
+   ========================================================= */
+
+.create-portal-members {
+    display: flex;
+    flex-direction: column;
+
+    min-height: 0;
+
+    border: 1px solid #e2e8f0;
+    border-radius: 11px;
+
+    background: #ffffff;
+
+    overflow: hidden;
+
+    box-shadow:
+        0 1px 3px rgba(15, 23, 42, 0.025);
+}
+
+
+/* =========================================================
+   Members Header
+   ========================================================= */
+
+.create-portal-members-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    padding: 12px 13px;
+
+    border-bottom: 1px solid #e2e8f0;
+
+    background: #f8fafc;
+}
+
+.create-portal-members-title {
+    color: #1e293b;
+
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.create-portal-members-count {
+    margin-top: 3px;
+
+    color: #64748b;
+
+    font-size: 10px;
+}
+
+
+/* =========================================================
+   Search
+   ========================================================= */
+
+.create-portal-member-search {
+    width: calc(100% - 20px);
+
+    height: 36px;
+
+    box-sizing: border-box;
+
+    margin: 10px;
+
+    padding: 7px 10px;
+
+    border: 1px solid #dbe2ea;
+    border-radius: 8px;
+
+    outline: none;
+
+    background: #ffffff;
+
+    color: #1e293b;
+
+    font-family: inherit;
+    font-size: 12px;
+
+    transition:
+        border-color 0.16s ease,
+        box-shadow 0.16s ease;
+}
+
+.create-portal-member-search::placeholder {
+    color: #94a3b8;
+}
+
+.create-portal-member-search:hover {
+    border-color: #cbd5e1;
+}
+
+.create-portal-member-search:focus {
+    border-color: #64748b;
+
+    box-shadow:
+        0 0 0 3px rgba(100, 116, 139, 0.10);
+}
+
+
+/* =========================================================
+   User List
+   ========================================================= */
+
+.create-portal-user-list {
+    display: flex;
+    flex-direction: column;
+
+    max-height: 210px;
+
+    overflow-y: auto;
+
+    padding: 0 8px 8px;
+}
+
+.create-portal-user-list::-webkit-scrollbar {
+    width: 5px;
+}
+
+.create-portal-user-list::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.create-portal-user-list::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 10px;
+}
+
+
+/* =========================================================
+   User
+   ========================================================= */
+
+.create-portal-user {
+    display: flex;
+    align-items: center;
+
+    width: 100%;
+
+    min-height: 48px;
+
+    padding: 8px 9px;
+
+    gap: 10px;
+
+    border: 1px solid transparent;
+    border-radius: 9px;
+
+    background: transparent;
+
+    text-align: left;
+
+    cursor: pointer;
+
+    transition:
+        background 0.15s ease,
+        border-color 0.15s ease,
+        transform 0.12s ease;
+}
+
+.create-portal-user:hover {
+    background: #f8fafc;
+    border-color: #edf2f7;
+}
+
+.create-portal-user:active {
+    transform: scale(0.995);
+}
+
+.create-portal-user.selected {
+    background: #f1f5f9;
+    border-color: #e2e8f0;
+}
+
+
+/* =========================================================
+   Checkbox
+   ========================================================= */
+
+.create-portal-checkbox {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    flex-shrink: 0;
+
+    width: 18px;
+    height: 18px;
+
+    box-sizing: border-box;
+
+    border: 1px solid #cbd5e1;
+    border-radius: 5px;
+
+    background: #ffffff;
+
+    color: #ffffff;
+
+    font-size: 11px;
+    font-weight: 800;
+
+    transition:
+        background 0.15s ease,
+        border-color 0.15s ease,
+        transform 0.12s ease;
+}
+
+.create-portal-user:hover .create-portal-checkbox {
+    border-color: #94a3b8;
+}
+
+.create-portal-checkbox.checked {
+    border-color: #0f172a;
+
+    background: #0f172a;
+
+    transform: scale(1.03);
+}
+
+
+/* =========================================================
+   User Info
+   ========================================================= */
+
+.create-portal-user-info {
+    display: flex;
+    flex-direction: column;
+
+    min-width: 0;
+
+    flex: 1;
+}
+
+.create-portal-user-name {
+    overflow: hidden;
+
+    color: #334155;
+
+    font-size: 12px;
+    font-weight: 600;
+
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.create-portal-user-id {
+    margin-top: 2px;
+
+    overflow: hidden;
+
+    color: #94a3b8;
+
+    font-size: 10px;
+
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+
+/* =========================================================
+   User Role
+   ========================================================= */
+
+.create-portal-user-role {
+    flex-shrink: 0;
+
+    padding: 4px 8px;
+
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+
+    background: #ffffff;
+
+    color: #64748b;
+
+    font-size: 9px;
+    font-weight: 650;
+
+    text-transform: capitalize;
+}
+
+
+/* =========================================================
+   No Users
+   ========================================================= */
+
+.create-portal-no-users {
+    padding: 24px 20px;
+
+    text-align: center;
+
+    color: #94a3b8;
+
+    font-size: 12px;
+}
+
+
+/* =========================================================
+   Actions
+   ========================================================= */
+
+.create-portal-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+
+    gap: 9px;
+
+    padding-top: 3px;
+}
+
+
+/* =========================================================
+   Buttons
+   ========================================================= */
+
+.create-portal-cancel,
+.create-portal-submit {
+    height: 36px;
+
+    padding: 0 14px;
+
+    border-radius: 8px;
+
+    font-family: inherit;
+
+    font-size: 12px;
+    font-weight: 650;
+
+    cursor: pointer;
+
+    transition:
+        background 0.16s ease,
+        border-color 0.16s ease,
+        box-shadow 0.16s ease,
+        transform 0.12s ease;
+}
+
+
+/* Cancel */
+
+.create-portal-cancel {
+    border: 1px solid #dbe2ea;
+
+    background: #ffffff;
+
+    color: #475569;
+}
+
+.create-portal-cancel:hover {
+    background: #f8fafc;
+    border-color: #cbd5e1;
+
+    color: #1e293b;
+}
+
+.create-portal-cancel:active {
+    transform: scale(0.97);
+}
+
+
+/* Submit */
+
+.create-portal-submit {
+    border: 1px solid #0f172a;
+
+    background: #0f172a;
+
+    color: #ffffff;
+
+    box-shadow:
+        0 2px 5px rgba(15, 23, 42, 0.12);
+}
+
+.create-portal-submit:hover {
+    background: #1e293b;
+    border-color: #1e293b;
+
+    box-shadow:
+        0 4px 10px rgba(15, 23, 42, 0.16);
+
+    transform: translateY(-1px);
+}
+
+.create-portal-submit:active {
+    transform: translateY(0) scale(0.98);
+}
+
+
+/* Focus */
+
+.create-portal-cancel:focus-visible,
+.create-portal-submit:focus-visible {
+    outline: 2px solid #94a3b8;
+    outline-offset: 2px;
+}
+
+
+/* Disabled */
+
+.create-portal-cancel:disabled,
+.create-portal-submit:disabled,
+.create-portal-user:disabled,
+.create-portal-close:disabled {
+    opacity: 0.55;
+
+    cursor: not-allowed;
+
+    transform: none;
+}
+
+
+/* =========================================================
+   Mobile
+   ========================================================= */
+
+@media (max-width: 600px) {
+
+    .create-portal-overlay {
+        align-items: flex-end;
+
+        padding: 10px;
+    }
+
+    .create-portal-modal {
+        max-width: none;
+
+        max-height: calc(100vh - 20px);
+
+        border-radius: 14px;
+    }
+
+    .create-portal-header {
+        padding: 16px;
+    }
+
+    .create-portal-form {
+        padding: 16px;
+    }
+
+    .create-portal-user-list {
+        max-height: 180px;
+    }
+
+    .create-portal-actions {
+        padding-top: 4px;
+    }
+
+    .create-portal-cancel,
+    .create-portal-submit {
+        height: 37px;
+    }
+}

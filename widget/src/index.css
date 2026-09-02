@@ -1,0 +1,71 @@
+
+.rtc-launcher{
+    position:fixed;
+
+    right:24px;
+    bottom:24px;
+
+    width:54px;
+    height:54px;
+
+    border-radius:50%;
+
+    border: 0;
+
+    background: #55408f;
+    color: #ffffff;
+
+    font-size: 22px;
+    box-shadow: 0 10px 24px rgba(85, 64, 143, 0.28);
+    cursor: pointer;
+    transition: transform 0.2s ease, background 0.2s ease;
+
+    z-index:9999;
+}
+
+.rtc-launcher:hover {
+    background: #3e2c70;
+    transform: translateY(-2px);
+}
+
+.rtc-popup{
+
+    position:fixed;
+
+    right:24px;
+    bottom:92px;
+
+    width: 780px;
+    max-width: calc(100vw - 32px);
+    height: 550px;
+    max-height: calc(100vh - 120px);
+
+    background: #eceaf2;
+
+    border-radius:16px;
+
+    overflow:hidden;
+
+    box-shadow: 0 18px 45px rgba(46, 35, 75, 0.22);
+
+    z-index:9998;
+}
+@media (max-width:768px){
+
+    .rtc-popup{
+        right: 12px;
+        bottom: 82px;
+        width: calc(100vw - 24px);
+        max-width: none;
+        height: min(650px, calc(100vh - 105px));
+        max-height: none;
+        border-radius: 16px;
+    }
+
+    .rtc-launcher{
+
+        right:16px;
+        bottom:16px;
+    }
+
+}

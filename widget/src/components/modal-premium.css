@@ -1,0 +1,221 @@
+.rtc-modal-overlay {
+    background: rgba(31, 25, 48, 0.48);
+    backdrop-filter: blur(5px);
+}
+
+.rtc-modal {
+    width: min(390px, calc(100vw - 28px));
+    padding: 20px;
+    border: 1px solid var(--rtc-border);
+    border-radius: 14px;
+    background: var(--rtc-surface);
+    color: var(--rtc-text);
+    box-shadow: 0 22px 60px rgba(31, 25, 48, 0.24);
+}
+
+.rtc-modal h2 {
+    margin: 0 0 16px;
+    color: var(--rtc-text);
+    font-size: 18px;
+    line-height: 1.25;
+}
+
+.rtc-user-search,
+.rtc-group-name-input {
+    width: 100%;
+    min-height: 38px;
+    margin-bottom: 12px;
+    padding: 9px 11px;
+    border: 1px solid var(--rtc-border);
+    border-radius: 8px;
+    outline: none;
+    background: var(--rtc-surface-muted);
+    color: var(--rtc-text);
+    font: inherit;
+    font-size: 12px;
+}
+
+.rtc-user-search:focus,
+.rtc-group-name-input:focus {
+    border-color: var(--rtc-accent);
+    box-shadow: 0 0 0 3px var(--rtc-accent-shadow);
+}
+
+.rtc-user-list {
+    max-height: 280px;
+    padding: 3px;
+    overflow-y: auto;
+}
+
+.rtc-user-item {
+    gap: 10px;
+    min-height: 48px;
+    padding: 8px 9px;
+    border: 1px solid transparent;
+    border-radius: 9px;
+    background: transparent;
+    color: var(--rtc-text);
+    font-size: 12px;
+}
+
+.rtc-user-item:hover:not(:disabled),
+.rtc-user-item.rtc-selected-user {
+    background: var(--rtc-accent-soft);
+    border-color: var(--rtc-border);
+}
+
+.rtc-user-item:focus-visible {
+    outline: 2px solid var(--rtc-accent);
+    outline-offset: 1px;
+}
+
+.rtc-user-avatar {
+    width: 34px;
+    height: 34px;
+    background: var(--rtc-accent);
+    box-shadow: 0 3px 8px var(--rtc-accent-shadow);
+    font-size: 13px;
+}
+
+.rtc-selected-members {
+    gap: 6px;
+    margin-bottom: 12px;
+}
+
+.rtc-member-chip {
+    gap: 5px;
+    padding: 5px 8px;
+    border: 1px solid var(--rtc-border);
+    border-radius: 8px;
+    background: var(--rtc-accent-soft);
+    color: var(--rtc-text);
+    font-size: 11px;
+}
+
+.rtc-member-chip button {
+    color: var(--rtc-text-muted);
+}
+
+.rtc-member-chip button:hover {
+    color: var(--rtc-accent);
+}
+
+.rtc-check {
+    color: var(--rtc-accent);
+}
+
+.rtc-modal-buttons,
+.create-portal-actions {
+    gap: 8px;
+    margin-top: 16px;
+}
+
+.rtc-primary-btn,
+.create-portal-submit {
+    min-height: 34px;
+    padding: 8px 13px;
+    border: 1px solid var(--rtc-accent);
+    border-radius: 8px;
+    background: var(--rtc-accent);
+    color: #ffffff;
+    font: inherit;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.rtc-primary-btn:hover:not(:disabled),
+.create-portal-submit:hover:not(:disabled) {
+    background: var(--rtc-accent-strong);
+}
+
+.rtc-cancel-btn,
+.create-portal-cancel {
+    min-height: 34px;
+    padding: 8px 13px;
+    border: 1px solid var(--rtc-border);
+    border-radius: 8px;
+    background: var(--rtc-surface-muted);
+    color: var(--rtc-text-muted);
+    font: inherit;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.rtc-cancel-btn:hover:not(:disabled),
+.create-portal-cancel:hover:not(:disabled) {
+    background: var(--rtc-accent-soft);
+    color: var(--rtc-text);
+}
+
+.create-portal-modal {
+    width: min(520px, calc(100vw - 28px));
+}
+
+.create-portal-header,
+.create-portal-form {
+    background: var(--rtc-surface);
+}
+
+.create-portal-header h3,
+.create-portal-members-title,
+.create-portal-user-name {
+    color: var(--rtc-text);
+}
+
+.create-portal-form > label {
+    color: var(--rtc-text-muted);
+}
+
+.create-portal-form input[type="text"],
+.create-portal-form textarea,
+.create-portal-form select,
+.create-portal-member-search {
+    border-color: var(--rtc-border);
+    background: var(--rtc-surface-muted);
+    color: var(--rtc-text);
+}
+
+.create-portal-form input[type="text"]:focus,
+.create-portal-form textarea:focus,
+.create-portal-form select:focus,
+.create-portal-member-search:focus {
+    border-color: var(--rtc-accent);
+    box-shadow: 0 0 0 3px var(--rtc-accent-shadow);
+}
+
+.create-portal-members {
+    border-color: var(--rtc-border);
+    background: var(--rtc-surface);
+    box-shadow: none;
+}
+
+.create-portal-members-header {
+    border-color: var(--rtc-border);
+    background: var(--rtc-surface-muted);
+}
+
+.create-portal-user {
+    border-color: transparent;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--rtc-text);
+}
+
+.create-portal-user:hover,
+.create-portal-user.selected {
+    border-color: var(--rtc-border);
+    background: var(--rtc-accent-soft);
+}
+
+.create-portal-checkbox.checked {
+    border-color: var(--rtc-accent);
+    background: var(--rtc-accent);
+}
+
+@media (max-width: 480px) {
+    .rtc-modal,
+    .create-portal-modal {
+        width: calc(100vw - 20px);
+        padding: 16px;
+    }
+}

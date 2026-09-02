@@ -1,0 +1,462 @@
+.rtc-message {
+    display: flex;
+    flex-direction: column;
+
+    margin: 12px;
+
+    max-width: 100%;
+    min-width: 0;
+
+    animation: rtc-message-in 0.2s ease-out;
+}
+
+@keyframes rtc-message-in {
+    from {
+        opacity: 0;
+        transform: translateY(6px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+
+.rtc-message.rtc-mine {
+    align-items: flex-end;
+}
+
+.rtc-message.rtc-other {
+    align-items: flex-start;
+}
+
+
+/* ================================
+   Sender
+================================ */
+
+.rtc-sender {
+    margin-bottom: 4px;
+
+    font-size: 12px;
+    font-weight: 600;
+
+    color: #6f7480;
+
+    transition: color 0.2s ease;
+}
+
+
+/* ================================
+   Message Bubble
+================================ */
+
+.rtc-bubble {
+    max-width: 70%;
+    min-width: 0;
+
+    box-sizing: border-box;
+
+    padding: 10px 14px;
+
+    border-radius: 16px;
+
+    word-wrap: break-word;
+    overflow-wrap: anywhere;
+
+    display: flex;
+    flex-direction: column;
+
+    gap: 6px;
+
+    box-shadow:
+        0 2px 5px rgba(30, 35, 50, 0.07);
+
+    overflow: hidden;
+
+    transition:
+        transform 0.18s ease,
+        box-shadow 0.18s ease;
+}
+
+.rtc-message:hover .rtc-bubble {
+    box-shadow:
+        0 4px 10px rgba(30, 35, 50, 0.10);
+}
+
+
+/* ================================
+   My Message
+================================ */
+
+.rtc-message.rtc-mine .rtc-bubble {
+    background: #d8f8e8;
+
+    color: #26332d;
+
+    border-bottom-right-radius: 4px;
+}
+
+
+/* ================================
+   Other User Message
+================================ */
+
+.rtc-message.rtc-other .rtc-bubble {
+    background: #eef0ff;
+
+    color: #292d3a;
+
+    border-bottom-left-radius: 4px;
+}
+
+
+/* ================================
+   Message Time
+================================ */
+
+.rtc-message-time {
+    align-self: flex-end;
+
+    font-size: 11px;
+
+    color: #737987;
+
+    opacity: 0.75;
+
+    white-space: nowrap;
+}
+
+
+/* ================================
+   Edit Message
+================================ */
+
+.rtc-message-edit {
+    display: flex;
+    flex-direction: column;
+
+    gap: 6px;
+}
+
+.rtc-message-edit input {
+    width: 100%;
+
+    box-sizing: border-box;
+
+    padding: 8px 10px;
+
+    border: 1px solid #d7dbe5;
+
+    border-radius: 8px;
+
+    outline: none;
+
+    background: #ffffff;
+
+    color: #252832;
+
+    font-size: 14px;
+
+    transition:
+        border-color 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+.rtc-message-edit input:focus {
+    border-color: #6366f1;
+
+    box-shadow:
+        0 0 0 3px rgba(99, 102, 241, 0.10);
+}
+
+
+/* ================================
+   Edit Actions
+================================ */
+
+.rtc-message-actions {
+    display: flex;
+
+    gap: 6px;
+
+    justify-content: flex-end;
+}
+
+.rtc-message-actions button {
+    border: none;
+
+    border-radius: 6px;
+
+    padding: 5px 9px;
+
+    font-size: 12px;
+
+    cursor: pointer;
+
+    transition:
+        transform 0.15s ease,
+        background 0.2s ease;
+}
+
+.rtc-message-actions button:hover {
+    transform: translateY(-1px);
+}
+
+.rtc-message-actions button:active {
+    transform: scale(0.96);
+}
+
+
+/* ================================
+   Edit Button
+================================ */
+
+.rtc-edit-button {
+    margin-top: 2px;
+
+    border: none;
+
+    background: transparent;
+
+    width: 22px;
+    height: 22px;
+    padding: 0;
+    border-radius: 50%;
+    font-size: 13px;
+
+    color: #6366f1;
+
+    cursor: pointer;
+
+    align-self: flex-end;
+
+    transition:
+        color 0.2s ease,
+        transform 0.15s ease;
+}
+
+.rtc-edit-button:hover {
+    color: #4f46e5;
+
+    text-decoration: underline;
+
+    transform: translateY(-1px);
+}
+
+
+/* ================================
+   Deleted Message
+================================ */
+
+.rtc-deleted-message {
+    font-style: italic;
+
+    color: #7b8190;
+
+    opacity: 0.7;
+}
+
+
+/* ================================
+   Delete Button
+================================ */
+
+.rtc-delete-button {
+    margin-top: 2px;
+
+    border: none;
+
+    background: transparent;
+
+    color: #c05a58;
+
+    width: 22px;
+    height: 22px;
+    font-size: 12px;
+
+    padding: 0;
+
+    border-radius: 50%;
+
+    cursor: pointer;
+
+    transition:
+        background 0.15s ease,
+        color 0.15s ease,
+        transform 0.15s ease;
+}
+
+.rtc-delete-button:hover {
+    background: rgba(192, 90, 88, 0.10);
+
+    color: #a83f3d;
+
+    transform: translateY(-1px);
+}
+
+.rtc-delete-button:active {
+    background: rgba(192, 90, 88, 0.16);
+
+    transform: scale(0.96);
+}
+
+
+/* ================================
+   Image Message
+================================ */
+
+.rtc-image-message {
+    width: 100%;
+
+    max-width: 280px;
+
+    min-width: 0;
+
+    overflow: hidden;
+}
+
+.rtc-image-preview {
+    display: block;
+
+    width: 100%;
+
+    max-width: 280px;
+
+    max-height: 300px;
+
+    object-fit: contain;
+
+    border-radius: 8px;
+
+    cursor: pointer;
+
+    transition:
+        transform 0.2s ease,
+        filter 0.2s ease;
+}
+
+.rtc-image-preview:hover {
+    transform: scale(1.015);
+
+    filter: brightness(0.96);
+}
+
+.rtc-image-name {
+    margin-top: 6px;
+
+    font-size: 12px;
+
+    color: #707684;
+
+    opacity: 0.8;
+}
+
+
+/* ================================
+   File Actions
+================================ */
+
+.rtc-file-actions {
+    display: flex;
+
+    gap: 8px;
+
+    margin-top: 8px;
+}
+
+.rtc-file-open,
+.rtc-file-download {
+    text-decoration: none;
+
+    cursor: pointer;
+
+    color: #6366f1;
+
+    font-size: 12px;
+    font-weight: 500;
+
+    transition:
+        color 0.2s ease,
+        transform 0.15s ease;
+}
+
+.rtc-file-open:hover,
+.rtc-file-download:hover {
+    color: #4f46e5;
+
+    transform: translateY(-1px);
+}
+
+
+/* ================================
+   File Message
+================================ */
+
+.rtc-file-message {
+    min-width: 220px;
+
+    max-width: 280px;
+}
+
+.rtc-file-info {
+    display: flex;
+
+    align-items: center;
+
+    gap: 10px;
+}
+
+
+/* ================================
+   File Icon
+================================ */
+
+.rtc-file-icon {
+    font-size: 28px;
+
+    flex-shrink: 0;
+
+    transition:
+        transform 0.2s ease;
+}
+
+.rtc-file-message:hover .rtc-file-icon {
+    transform: scale(1.08) rotate(-3deg);
+}
+
+
+/* ================================
+   File Details
+================================ */
+
+.rtc-file-details {
+    min-width: 0;
+
+    overflow: hidden;
+}
+
+.rtc-file-name {
+    font-size: 14px;
+
+    font-weight: 500;
+
+    color: #30343d;
+
+    overflow: hidden;
+
+    text-overflow: ellipsis;
+
+    white-space: nowrap;
+}
+
+.rtc-file-size {
+    font-size: 11px;
+
+    color: #777d89;
+
+    opacity: 0.75;
+
+    margin-top: 2px;
+}

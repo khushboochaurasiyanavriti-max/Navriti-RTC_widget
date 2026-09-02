@@ -1,0 +1,81 @@
+/* =========================================
+   Edit announcement information
+========================================= */
+
+.announcement-edit-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    margin-top: 4px;
+    padding: 10px 12px;
+
+    border-radius: 6px;
+
+    background: #f7f7f7;
+
+    font-size: 13px;
+}
+
+.announcement-edit-info span {
+    color: #666;
+}
+
+.announcement-edit-info strong {
+    font-weight: 600;
+}
+
+
+/* =========================================
+   Existing attachments
+========================================= */
+
+.announcement-edit-attachments {
+    display: flex;
+    flex-direction: column;
+
+    gap: 6px;
+
+    margin-top: 4px;
+}
+
+.announcement-edit-attachments-title {
+    font-size: 13px;
+    font-weight: 600;
+
+    margin-bottom: 2px;
+}
+
+.announcement-edit-attachment {
+    display: flex;
+    align-items: center;
+
+    gap: 8px;
+
+    padding: 8px 10px;
+
+    border: 1px solid #e5e5e5;
+    border-radius: 6px;
+
+    background: #fafafa;
+
+    font-size: 13px;
+}
+
+.announcement-edit-attachment span:last-child {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+
+/* =========================================
+   Disabled state
+========================================= */
+
+.announcement-modal button:disabled,
+.announcement-modal input:disabled,
+.announcement-modal textarea:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+}

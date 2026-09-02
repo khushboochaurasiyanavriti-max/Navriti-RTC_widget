@@ -1,0 +1,49 @@
+.rtc-conversation-list {
+    flex: 1;
+
+    overflow-y: auto;
+    overflow-x: hidden;
+
+    background: white;
+
+    /* Smooth scrolling */
+    scroll-behavior: smooth;
+}
+
+.rtc-conversation-wrapper {
+    position: relative;
+}
+
+
+/* Mention notification */
+
+.rtc-mention-badge {
+    position: absolute;
+
+    right: 10px;
+    top: 50%;
+
+    transform: translateY(-50%);
+
+    min-width: 22px;
+    height: 22px;
+
+    padding: 0 6px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 11px;
+
+    background: #4f46e5;
+    color: #fff;
+
+    font-size: 11px;
+    font-weight: 700;
+
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+
+    /* Prevent badge from interfering with clicks */
+    pointer-events: none;
+}

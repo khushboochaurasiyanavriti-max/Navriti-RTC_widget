@@ -1,0 +1,271 @@
+.rtc-widget-container {
+    display: flex;
+    position: relative;
+
+    width: 780px;
+    max-width: 100%;
+
+    height: 550px;
+    max-height: 90vh;
+
+    border: 1px solid #ddd8eb;
+    border-radius: 16px;
+
+    overflow: hidden;
+
+    
+    background: #eceaf2;
+
+    box-shadow: 0 10px 28px rgba(46, 35, 75, 0.10);
+}
+
+.rtc-widget-close-button {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    z-index: 2;
+
+    width: 28px;
+    height: 28px;
+
+    border: 1px solid #ddd8eb;
+    border-radius: 50%;
+
+    background: #ffffff;
+    color: #655d78;
+
+    cursor: pointer;
+    font-size: 18px;
+    line-height: 1;
+}
+
+.rtc-widget-close-button:hover {
+    background: #eeeafb;
+    color: #55408f;
+}
+
+
+/* ================================
+   Sidebar
+================================ */
+
+.rtc-sidebar {
+    width: 380px;
+
+    display: flex;
+    flex-direction: column;
+
+    border-right: 1px solid #e4e0ed;
+
+    background: #f5f3f8;
+
+    flex-shrink: 0;
+}
+
+
+/* ================================
+   Sidebar Header
+================================ */
+
+.rtc-sidebar-header {
+    padding: 18px;
+
+    border-bottom: 1px solid #e5e5e5;
+
+    background: #ffffff;
+}
+
+
+/* ================================
+   Sidebar Title
+================================ */
+
+.rtc-sidebar-title {
+    display: flex;
+
+    justify-content: space-between;
+    align-items: center;
+
+    padding-right: 38px;
+
+    margin-bottom: 14px;
+}
+
+.rtc-sidebar-title h3 {
+    margin: 0;
+
+    color: #183b2d;
+    font-size: 17px;
+}
+
+.rtc-sidebar-title span {
+    background: #eeeafb;
+
+    color: #55408f;
+
+    padding: 2px 10px;
+
+    border-radius: 20px;
+
+    font-size: 12px;
+    font-weight: 600;
+}
+
+
+/* ================================
+   Sidebar Buttons
+================================ */
+
+.rtc-sidebar-buttons {
+    display: flex;
+
+    gap: 10px;
+}
+
+.rtc-sidebar-buttons button {
+    flex: 1;
+
+    padding: 10px;
+
+    border: none;
+
+    border-radius: 8px;
+
+    background: #55408f;
+
+    color: white;
+
+    cursor: pointer;
+}
+
+.rtc-sidebar-buttons button:hover {
+    background: #3e2c70;
+}
+
+
+/* ================================
+   Conversation Search
+================================ */
+
+.rtc-conversation-search {
+    width: 100%;
+
+    margin-top: 14px;
+
+    padding: 10px 14px;
+
+    border: 1px solid #ddd8eb;
+
+    border-radius: 8px;
+
+    outline: none;
+
+    box-sizing: border-box;
+}
+
+.rtc-conversation-search:focus {
+    border-color: #55408f;
+}
+
+
+/* ================================
+   Chat Section
+================================ */
+
+.rtc-chat-section {
+    flex: 1;
+
+    display: flex;
+
+    min-width: 0;
+}
+
+
+/* ================================
+   Mobile
+================================ */
+
+@media (max-width: 768px) {
+
+    .rtc-widget-container {
+        width: 100%;
+        max-width: 100%;
+
+        height: min(650px, 83dvh);
+        max-height: 90dvh;
+
+        border-radius: 12px;
+    }
+
+
+    .rtc-sidebar {
+        width: 100%;
+
+        border-right: none;
+    }
+
+
+    .rtc-chat-section {
+        display: none;
+
+        width: 100%;
+        height: 100%;
+
+        flex: 1;
+    }
+
+
+    .rtc-hide-mobile {
+        display: none;
+    }
+
+
+    .rtc-show-mobile {
+        display: flex;
+
+        flex: 1;
+
+        width: 100%;
+        height: 100%;
+    }
+
+}
+
+
+
+
+/* ================================
+   Small Mobile
+================================ */
+
+@media (max-width: 480px) {
+
+    .rtc-widget-container {
+        height: 100dvh;
+        max-height: 100dvh;
+
+        border-radius: 0;
+        border: none;
+    }
+
+    .rtc-sidebar-header {
+        padding: 14px;
+    }
+
+    .rtc-sidebar-title h3 {
+        font-size: 17px;
+    }
+
+    .rtc-sidebar-buttons button {
+        padding: 9px 6px;
+    }
+}
+
+
+.rtc-announcement-section {
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+    height: 100%;
+    overflow: hidden;
+}
