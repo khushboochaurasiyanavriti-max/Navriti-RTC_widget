@@ -11,6 +11,9 @@ function CommunicationWidget({
     users,
     serverUrl,
 
+    //feature configuration
+    features,
+
     // Launcher
     launcherIcon = "💬",
     defaultOpen = false,
@@ -75,10 +78,23 @@ function CommunicationWidget({
                         currentUser={currentUser}
                         users={users}
                         serverUrl={serverUrl}
+                        features={features}
                         onClose={closeWidget}
                         theme={theme}
                         onThemeChange={setTheme}
+                        /*
+                        
+                        platform_Id="yxq-app"
+                        features={{
+                            directChat: true,
+                            groupChat: true,
+                            fileSharing: true,
+                        }}
+
+
+                        */
                     />
+
                 </div>
             )}
         </root.div>

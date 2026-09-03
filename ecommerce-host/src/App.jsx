@@ -78,11 +78,24 @@ function App() {
                     <span>Host application styling</span>
                     <h2>Support, updates, and team chat in one place.</h2>
                 </article>
+                
+                
+                
                 <CommunicationWidget
                     currentUser={currentUser}
                     users={users}
                     serverUrl="http://localhost:5000"
+                    features={{
+                        chat: true,
+                        groupChat: true,
+                        announcements: true,
+                        screenShare: true,
+                    }}
                 />
+
+
+
+                
             </section>
         </main>
     );

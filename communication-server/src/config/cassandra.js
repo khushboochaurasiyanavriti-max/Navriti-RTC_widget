@@ -1,9 +1,21 @@
 import cassandra from "cassandra-driver";
 
+const {
+    CASSANDRA_HOST,
+    CASSANDRA_DATACENTER,
+    CASSANDRA_KEYSPACE,
+} = process.env;
+
+if (!CASSANDRA_HOST || !CASSANDRA_DATACENTER || !CASSANDRA_KEYSPACE) {
+    throw new Error(
+        "Missing required Cassandra environment variables"
+    );
+}
+
 const client = new cassandra.Client({
-    contactPoints: [process.env.CASSANDRA_HOST || "127.0.0.1"],
-    localDataCenter: process.env.CASSANDRA_DATACENTER || "datacenter1",
-    keyspace: process.env.CASSANDRA_KEYSPACE || "navriti",
+    contactPoints: [CASSANDRA_HOST],
+    localDataCenter: CASSANDRA_DATACENTER,
+    keyspace: CASSANDRA_KEYSPACE,
 });
 
 export const connectCassandra = async () => {

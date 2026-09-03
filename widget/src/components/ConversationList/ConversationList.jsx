@@ -6,6 +6,8 @@ function ConversationList({
     selectedConversation,
     setSelectedConversation,
     mentionedConversations,
+    currentUser,
+    users,
 }) {
     const selectedId =
         selectedConversation?.conversationId?.toString();
@@ -31,6 +33,7 @@ function ConversationList({
                         className="rtc-conversation-wrapper"
                     >
                         <ConversationItem
+                            
                             conversation={conversation}
                             selected={isSelected}
                             onClick={() =>

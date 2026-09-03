@@ -9,6 +9,7 @@ import "./ChatWindow.css";
 
 
 function ChatWindow({
+    features,
     messages,
     message,
     setMessage,
@@ -21,6 +22,11 @@ function ChatWindow({
     onEditMessage,
     onDeleteMessage,
 }) {
+
+
+    const isFeatureEnabled = (featureName) => {
+        return features?.[featureName] === true;
+    };
     const [showMembers, setShowMembers] =
         useState(false);
     const [showScreenShare, setShowScreenShare] = 
@@ -160,7 +166,8 @@ function ChatWindow({
 
                 </div>
 
-
+                {isFeatureEnabled("screenShare") && (
+                <>
                 {/* Screen Share */}
 
                 <button
@@ -190,6 +197,8 @@ function ChatWindow({
                         ? "←"
                         : "▣"}
                 </button>
+                </>
+                )}
 
 
                 {/* Three Dot / Members Toggle */}
@@ -250,27 +259,28 @@ function ChatWindow({
                 </>
             )}
 
+            
+                    {/* ================================
+                        SCREEN SHARE SPACE
+                    ================================= */}
 
-            {/* ================================
-                SCREEN SHARE SPACE
-            ================================= */}
+                    <div
+                        className={`rtc-screen-share-space ${
+                            showScreenShare
+                                ? "visible"
+                                : ""
+                        }`}
+                    >
+                        <ScreenShare
+                            conversationId={
+                                selectedConversation.conversationId
+                            }
+                            currentUser={currentUser}
+                            participantIds={users}
+                            booleanConnection={showScreenShare}
+                        />
+                    </div>
 
-            <div
-                className={`rtc-screen-share-space ${
-                    showScreenShare
-                        ? "visible"
-                        : ""
-                }`}
-            >
-                <ScreenShare
-                    conversationId={
-                        selectedConversation.conversationId
-                    }
-                    currentUser={currentUser}
-                    participantIds={users}
-                    booleanConnection={showScreenShare}
-                />
-            </div>
 
         </div>
     );

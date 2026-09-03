@@ -101,6 +101,12 @@ function App() {
                     currentUser={currentUser}
                     users={users}
                     serverUrl={serverUrl}
+                    features={{
+                        chat: true,
+                        groupChat: true,
+                        announcements: true,
+                        screenShare: true,
+                    }}
                 />
             </section>
         </main>

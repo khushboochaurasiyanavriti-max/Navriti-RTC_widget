@@ -75,12 +75,18 @@ function WidgetContainer({
     currentUser,
     users,
     serverUrl,
+    features,
     onClose,
     theme = "light",
     onThemeChange,
 }) {
 
     const senderId = currentUser?.userId;
+
+
+    const isFeatureEnabled = (featureName) => {
+        return features?.[featureName] === true;
+    };
 
 
     /*
@@ -1815,15 +1821,29 @@ function WidgetContainer({
      * =========================================================
      */
 
-    const filteredConversations =
-        conversations.filter(
-            (conversation) =>
-                conversation.displayName
-                    ?.toLowerCase()
-                    .includes(
-                        searchText.toLowerCase()
-                    )
+    const filteredConversations = conversations.filter(
+        (conversation) => {
+        const matchesSearch =
+        conversation.displayName
+        ?.toLowerCase()
+        .includes(
+        searchText.toLowerCase()
         );
+
+
+            const matchesFeatureConfiguration =
+                (conversation.type === "direct" &&
+                    isFeatureEnabled("chat")) ||
+                (conversation.type === "group" &&
+                    isFeatureEnabled("groupChat"));
+
+            return (
+                matchesSearch &&
+                matchesFeatureConfiguration
+            );
+        }
+    );
+
 
 
     /*
@@ -1898,40 +1918,36 @@ function WidgetContainer({
 
                         <div className="rtc-sidebar-buttons">
 
-                            <button
-                                type="button"
-                                onClick={() =>
-                                    setIsChatModalOpen(
-                                        true
-                                    )
-                                }
-                            >
-                                💬 Chat
-                            </button>
+                            {isFeatureEnabled("chat") && (
+                                <button
+                                    type="button"
+                                    onClick={() => setIsChatModalOpen(true)}
+                                >
+                                    💬 Chat
+                                </button>
+                            )}
 
 
-                            <button
-                                type="button"
-                                onClick={() =>
-                                    setIsGroupModalOpen(
-                                        true
-                                    )
-                                }
-                            >
-                                👥 Group
-                            </button>
+                            {isFeatureEnabled("groupChat") && (
+                                <button
+                                    type="button"
+                                    onClick={() => setIsGroupModalOpen(true)}
+                                >
+                                    👥 Group
+                                </button>
+                            )}
 
 
-                            <button
-                                type="button"
-                                onClick={() =>
-                                    setActiveSection(
-                                        "announcements"
-                                    )
-                                }
-                            >
-                                📢 Announcements
-                            </button>
+                            {isFeatureEnabled("announcements") && (
+                                <button
+                                    type="button"
+                                    onClick={() =>
+                                        setActiveSection("announcements")
+                                    }
+                                >
+                                    📢 Announcements
+                                </button>
+                            )}
 
                         </div>
 
@@ -1954,6 +1970,7 @@ function WidgetContainer({
 
 
                     <ConversationList
+
                         conversations={
                             filteredConversations
                         }
@@ -1969,6 +1986,7 @@ function WidgetContainer({
                         mentionedConversations={
                             mentionedConversations
                         }
+
                     />
 
                 </div>
@@ -1993,7 +2011,7 @@ function WidgetContainer({
                 >
 
                     <ChatWindow
-
+                        features={features}
                         messages={
                             messages
                         }
