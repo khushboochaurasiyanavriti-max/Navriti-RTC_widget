@@ -1,135 +1,397 @@
+# Navriti RTC Widget
 
-# Real-Time Communication Widget
+A reusable React communication widget with real-time messaging, conversation management, file sharing, screen-share signaling, announcement portals, and WebRTC signaling.
 
-A reusable real-time communication/chat widget that can be integrated into host applications.
+## Repository Structure
 
-The widget provides one-to-one conversations, group conversations, real-time messaging, message editing/deletion, mentions, file sharing, image previews, and persistent conversation history.
+```text
+Navriti-RTC_widget-main/
+├── communication-server/       # Express + Socket.IO + Cassandra backend
+│   └── src/
+│       ├── config/
+│       ├── controllers/
+│       ├── middleware/
+│       ├── repositories/
+│       ├── routes/
+│       ├── socket/
+│       ├── app.js
+│       └── server.js
+├── widget/                     # Reusable embeddable React widget package
+├── demo-host-app/              # Demo host application
+├── widget-host-test/           # Widget integration test host
+├── dashboard-host/             # Dashboard host application
+├── ecommerce-host/             # E-commerce host application
+├── ISSUES.md
+└── Readme.md
+```
 
 ---
 
-# Architecture
+# Prerequisites
+
+Install and configure:
+
+- Node.js
+- npm
+- Docker Desktop
+- Apache Cassandra running through Docker
+- Cloudinary account credentials for file upload functionality
+
+---
+
+# Installation
+
+The repository contains multiple independent Node/Vite projects. Install dependencies in every project you plan to run.
+
+## 1. Communication Server
+
+```bash
+cd communication-server
+npm install
+```
+
+## 2. Communication Widget
+
+```bash
+cd widget
+npm install
+```
+
+## 3. Demo Host App
+
+```bash
+cd demo-host-app
+npm install
+```
+
+## 4. Widget Host Test
+
+```bash
+cd widget-host-test
+npm install
+```
+
+## 5. Dashboard Host
+
+```bash
+cd dashboard-host
+npm install
+```
+
+## 6. E-commerce Host
+
+```bash
+cd ecommerce-host
+npm install
+```
+
+---
+
+# Cassandra Setup
+
+The communication server uses Cassandra repositories for persistent application data.
+
+## Start the existing Cassandra container
+
+```bash
+docker start cassandra-dev
+```
+
+## Open Cassandra CQL shell
+
+```bash
+docker exec -it cassandra-dev cqlsh
+```
+
+## List available keyspaces
+
+Inside `cqlsh`:
+
+```sql
+DESCRIBE KEYSPACES;
+```
+
+## Select the application keyspace
+
+```sql
+USE navriti;
+```
+
+## List tables
+
+```sql
+DESCRIBE TABLES;
+```
+
+## Inspect a table
+
+```sql
+DESCRIBE TABLE <table_name>;
+```
+
+## Exit Cassandra shell
+
+```sql
+exit
+```
+
+If the container is not running, verify its status:
+
+```bash
+docker ps -a
+```
+
+---
+
+# Environment Configuration
+
+Configure the environment values required by the communication server.
+
+Example values used by the current Cassandra setup:
+
+```env
+PORT=5000
+
+CASSANDRA_HOST=127.0.0.1
+CASSANDRA_DATACENTER=datacenter1
+CASSANDRA_KEYSPACE=navriti
+
+CLOUDINARY_CLOUD_NAME=<your_cloud_name>
+CLOUDINARY_API_KEY=<your_api_key>
+CLOUDINARY_API_SECRET=<your_api_secret>
+```
+
+Cloudinary credentials are required for file upload and cleanup through the file API.
+
+Do not commit real secrets to the repository.
+
+---
+
+# Running the Project
+
+## Terminal 1 — Cassandra
+
+Start Cassandra:
+
+```bash
+docker start cassandra-dev
+```
+
+Use `cqlsh` only when database inspection is required:
+
+```bash
+docker exec -it cassandra-dev cqlsh
+```
+
+---
+
+## Terminal 2 — Communication Server
+
+```bash
+cd communication-server
+npm run dev
+```
+
+Current development script:
 
 ```text
-                         Host Application
-                                │
-                                │
-                         Authentication
-                         User Identity
-                                │
-                                ▼
-                  ┌─────────────────────────┐
-                  │   Communication Widget  │
-                  │                         │
-                  │  Conversation List      │
-                  │  Chat Window            │
-                  │  Message List            │
-                  │  Chat Input              │
-                  │  File Sharing            │
-                  │  Mentions                │
-                  └────────────┬────────────┘
-                               │
-                    ┌──────────┴──────────┐
-                    │                     │
-                 REST API              Socket.IO
-                    │                     │
-        ┌───────────┼──────────┐          │
-        │           │          │          │
-     Direct       Group     History       │
-      Chat         Chat     Messages      │
-        │           │          │          │
-        └───────────┴──────────┴──────────┘
-                    │                     │
-                    └──────────┬──────────┘
-                               │
-                          MongoDB
-                               │
-                               │
-                         File Metadata
-                               │
-                               ▼
-                           Cloudinary
-````
+kill-port 5000 && nodemon src/server.js
+```
+
+This clears port `5000` and starts the server with Nodemon.
+
+Run without Nodemon:
+
+```bash
+npm start
+```
+
+Current production/start command:
+
+```text
+node src/server.js
+```
+
+---
+
+## Terminal 3 — Widget Development
+
+```bash
+cd widget
+npm run dev
+```
+
+Build the widget:
+
+```bash
+npm run build
+```
+
+Preview the built widget:
+
+```bash
+npm run preview
+```
+
+Run linting:
+
+```bash
+npm run lint
+```
+
+---
+
+## Terminal 4 — Run One Host Application
+
+Only the host application currently being tested needs to run.
+
+### Demo Host App
+
+```bash
+cd demo-host-app
+npm run dev
+```
+
+Build:
+
+```bash
+npm run build
+```
+
+Lint:
+
+```bash
+npm run lint
+```
+
+Preview:
+
+```bash
+npm run preview
+```
+
+### Widget Host Test
+
+```bash
+cd widget-host-test
+npm run dev
+```
+
+Build:
+
+```bash
+npm run build
+```
+
+Lint:
+
+```bash
+npm run lint
+```
+
+Preview:
+
+```bash
+npm run preview
+```
+
+### Dashboard Host
+
+```bash
+cd dashboard-host
+npm run dev
+```
+
+Build:
+
+```bash
+npm run build
+```
+
+Lint:
+
+```bash
+npm run lint
+```
+
+Preview:
+
+```bash
+npm run preview
+```
+
+### E-commerce Host
+
+```bash
+cd ecommerce-host
+npm run dev
+```
+
+Build:
+
+```bash
+npm run build
+```
+
+Lint:
+
+```bash
+npm run lint
+```
+
+Preview:
+
+```bash
+npm run preview
+```
 
 ---
 
 # Communication Server
 
-The communication server is responsible for:
+The backend is an Express application with Socket.IO for real-time application events and signaling.
 
-* Conversation management
-* Participant management
-* Message persistence
-* Real-time communication
-* Message editing
-* Message deletion
-* Mentions
-* File upload handling
-* File metadata persistence
-* Cloudinary file storage
+Default local server base URL:
+
+```text
+http://localhost:5000
+```
+
+Health/root endpoint:
+
+```http
+GET /
+```
+
+Response:
+
+```text
+Communication server is running
+```
 
 ---
 
-# REST API
+# REST API Reference
 
-REST APIs are used for operations that require persistent data retrieval or creation.
+## Conversations
 
-## Direct Conversations
+Base path:
 
-### Create/Get Direct Conversation
+```text
+/api/conversations
+```
+
+### Create or Get a Direct Conversation
 
 ```http
 POST /api/conversations/direct
 ```
 
-Creates a direct conversation between two users or returns the existing conversation.
-
-Example request:
-
-```json
-{
-    "currentUserId": "user-12",
-    "targetUserId": "user-13"
-}
-```
-
-The conversation uses a unique participant key:
+Handled by:
 
 ```text
-user-12:user-13
+createOrGetDirect
 ```
-
-This prevents duplicate direct conversations.
-
----
-
-## Group Conversations
-
-### Create Group
-
-```http
-POST /api/conversations/group
-```
-
-Example request:
-
-```json
-{
-    "groupName": "Development Team",
-    "currentUserId": "user-12",
-    "participants": [
-        "user-13",
-        "user-14"
-    ]
-}
-```
-
-The creator is automatically included as a participant.
-
-Duplicate participants are removed before creation.
-
----
-
-## User Conversations
 
 ### Get User Conversations
 
@@ -137,1167 +399,819 @@ Duplicate participants are removed before creation.
 GET /api/conversations/user/:userId
 ```
 
-Returns all conversations belonging to the user.
-
-The response contains:
-
-```json
-{
-    "conversationId": "...",
-    "type": "direct",
-    "displayName": "user-13",
-    "participants": [
-        "user-12",
-        "user-13"
-    ],
-    "lastMessage": "Hello",
-    "lastMessageTime": "..."
-}
-```
-
-For file messages, the conversation preview displays:
+Example:
 
 ```text
-📎 filename.pdf
+GET /api/conversations/user/user-123
 ```
 
-Conversations are sorted by latest message.
+Handled by:
+
+```text
+getUserConversations
+```
+
+### Create Group Conversation
+
+```http
+POST /api/conversations/group
+```
+
+Handled by:
+
+```text
+createGroup
+```
 
 ---
 
-## Message History
+## Messages
 
-### Get Conversation Messages
+Base path:
+
+```text
+/api/messages
+```
+
+### Get Messages for a Conversation
 
 ```http
 GET /api/messages/:conversationId
 ```
 
-Returns the persistent message history for a conversation.
-
----
-
-# File Sharing
-
-The widget supports file sharing through Cloudinary.
-
-## Supported Files
-
-### Images
-
-```text
-JPEG
-PNG
-WEBP
-```
-
-### Documents
-
-```text
-PDF
-TXT
-DOC
-DOCX
-```
-
-### Excel
-
-```text
-XLS
-XLSX
-```
-
-### Archives
-
-```text
-ZIP
-```
-
-Maximum file size:
-
-```text
-20 MB
-```
-
----
-
-# File Upload Flow
-
-```text
-User selects file
-        │
-        ▼
-Frontend validation
-        │
-        ▼
-POST /api/files/upload
-        │
-        ▼
-Multer memoryStorage
-        │
-        ▼
-File buffer
-        │
-        ▼
-Cloudinary
-        │
-        ├── secure_url
-        ├── public_id
-        └── resource_type
-        │
-        ▼
-Frontend receives metadata
-        │
-        ▼
-Socket.IO sendMessage
-        │
-        ▼
-MongoDB Message
-        │
-        ▼
-All users receive newMessage
-```
-
-Files themselves are stored in Cloudinary.
-
-MongoDB stores only the file metadata.
-
----
-
-# File Metadata
-
-File messages contain an attachment object:
-
-```js
-attachment: {
-    fileName: String,
-    fileUrl: String,
-    fileType: String,
-    fileSize: Number,
-    publicId: String,
-    resourceType: String
-}
-```
-
 Example:
+
+```text
+GET /api/messages/conversation-123
+```
+
+Handled by:
+
+```text
+getMessages
+```
+
+Message creation, editing, and deletion are handled in real time through Socket.IO events.
+
+---
+
+## Files
+
+Base path:
+
+```text
+/api/files
+```
+
+### Upload a File
+
+```http
+POST /api/files/upload
+```
+
+Request format:
+
+```text
+multipart/form-data
+```
+
+File field name:
+
+```text
+file
+```
+
+The uploaded file is processed through Cloudinary.
+
+Successful responses include file metadata such as:
+
+```text
+originalName
+fileName
+fileType
+fileSize
+fileUrl
+publicId
+resourceType
+```
+
+### Delete Uploaded File
+
+```http
+DELETE /api/files/upload
+```
+
+Expected request body:
 
 ```json
 {
-    "messageType": "file",
-    "content": "",
-    "attachment": {
-        "fileName": "interview_prep.pdf",
-        "fileUrl": "https://res.cloudinary.com/...",
-        "fileType": "application/pdf",
-        "fileSize": 245678,
-        "publicId": "communication-widget/abc123",
-        "resourceType": "image"
-    }
+  "publicId": "<cloudinary_public_id>",
+  "resourceType": "image"
 }
 ```
 
----
-
-# File Display
-
-## Images
-
-Images are displayed directly inside the chat:
-
-```text
-┌──────────────────────┐
-│                      │
-│      IMAGE PREVIEW   │
-│                      │
-└──────────────────────┘
-filename.png
-
-12.4 KB
-```
-
-Clicking the image opens the Cloudinary URL.
+`resourceType` defaults to `image` when not provided.
 
 ---
 
-## Other Files
+# Announcement Portal API
 
-Non-image files display:
+Base path:
 
 ```text
-📎 interview_prep.pdf
-1.2 MB
+/api/announcement-portals
+```
 
-Open    Download
+## Create Announcement Portal
+
+```http
+POST /api/announcement-portals
+```
+
+Handled by:
+
+```text
+createAnnouncementPortal
+```
+
+## Get User Announcement Portals
+
+```http
+GET /api/announcement-portals
+```
+
+Handled by:
+
+```text
+getUserAnnouncementPortals
+```
+
+## Delete Announcement Portal
+
+```http
+DELETE /api/announcement-portals/:portalId
+```
+
+Handled by:
+
+```text
+deleteAnnouncementPortal
 ```
 
 ---
 
-# File Deletion
+## Portal Members
 
-Files are deleted from Cloudinary when the corresponding file message is deleted.
+### Add Members
 
-```text
-Delete message
-      │
-      ▼
-Find MongoDB message
-      │
-      ▼
-Check messageType === "file"
-      │
-      ▼
-Cloudinary destroy(publicId, resourceType)
-      │
-      ▼
-Mark MongoDB message as deleted
-      │
-      ▼
-Emit messageDeleted
-      │
-      ▼
-Update UI
+```http
+POST /api/announcement-portals/:portalId/members
 ```
 
-Messages use soft deletion.
+Handled by:
 
-The message remains in MongoDB with:
+```text
+addPortalMembers
+```
+
+### Get Portal Members
+
+```http
+GET /api/announcement-portals/:portalId/members
+```
+
+Handled by:
+
+```text
+getPortalMembers
+```
+
+### Remove Portal Member
+
+```http
+DELETE /api/announcement-portals/:portalId/members/:userId
+```
+
+Handled by:
+
+```text
+removePortalMember
+```
+
+### Update Portal Member Role
+
+```http
+PATCH /api/announcement-portals/:portalId/members/:userId/role
+```
+
+Handled by:
+
+```text
+updatePortalMemberRole
+```
+
+---
+
+## Announcements
+
+### Create Announcement
+
+```http
+POST /api/announcement-portals/:portalId/announcements
+```
+
+The route supports attachments using:
+
+```text
+multipart/form-data
+```
+
+Attachment field:
+
+```text
+attachments
+```
+
+Maximum attachment count:
+
+```text
+10
+```
+
+Handled by:
+
+```text
+createAnnouncement
+```
+
+### Get Announcements
+
+```http
+GET /api/announcement-portals/:portalId/announcements
+```
+
+Handled by:
+
+```text
+getAnnouncements
+```
+
+### Get Single Announcement
+
+```http
+GET /api/announcement-portals/:portalId/announcements/:announcementId
+```
+
+Handled by:
+
+```text
+getAnnouncement
+```
+
+### Update Announcement
+
+```http
+PATCH /api/announcement-portals/:portalId/announcements/:announcementId
+```
+
+Handled by:
+
+```text
+updateAnnouncement
+```
+
+### Delete Announcement
+
+```http
+DELETE /api/announcement-portals/:portalId/announcements/:announcementId
+```
+
+Handled by:
+
+```text
+deleteAnnouncement
+```
+
+---
+
+# Complete REST Endpoint Summary
+
+| Method | Endpoint | Purpose |
+|---|---|---|
+| GET | `/` | Server health/root response |
+| POST | `/api/conversations/direct` | Create or get direct conversation |
+| GET | `/api/conversations/user/:userId` | Get conversations for a user |
+| POST | `/api/conversations/group` | Create group conversation |
+| GET | `/api/messages/:conversationId` | Get conversation messages |
+| POST | `/api/files/upload` | Upload file |
+| DELETE | `/api/files/upload` | Delete uploaded file from Cloudinary |
+| POST | `/api/announcement-portals` | Create announcement portal |
+| GET | `/api/announcement-portals` | Get user announcement portals |
+| DELETE | `/api/announcement-portals/:portalId` | Delete announcement portal |
+| POST | `/api/announcement-portals/:portalId/members` | Add portal members |
+| GET | `/api/announcement-portals/:portalId/members` | Get portal members |
+| DELETE | `/api/announcement-portals/:portalId/members/:userId` | Remove portal member |
+| PATCH | `/api/announcement-portals/:portalId/members/:userId/role` | Update member role |
+| POST | `/api/announcement-portals/:portalId/announcements` | Create announcement |
+| GET | `/api/announcement-portals/:portalId/announcements` | Get announcements |
+| GET | `/api/announcement-portals/:portalId/announcements/:announcementId` | Get one announcement |
+| PATCH | `/api/announcement-portals/:portalId/announcements/:announcementId` | Update announcement |
+| DELETE | `/api/announcement-portals/:portalId/announcements/:announcementId` | Delete announcement |
+
+---
+
+# Socket.IO Real-Time Communication
+
+The server uses Socket.IO for real-time application events and WebRTC signaling.
+
+The widget client currently supports transport configuration in:
+
+```text
+widget/src/services/socket.js
+```
+
+Recommended WebSocket-first configuration:
 
 ```js
-isDeleted: true
-```
+socket = io(serverUrl, {
+    transports: ["websocket", "polling"],
 
-The UI displays:
+    reconnection: true,
+    reconnectionAttempts: Infinity,
+    reconnectionDelay: 1000,
+    reconnectionDelayMax: 5000,
 
-```text
-Message deleted
-```
-
----
-
-# Socket.IO
-
-Socket.IO is responsible for real-time communication.
-
----
-
-## Connection
-
-Clients connect to the communication server using Socket.IO.
-
-Each connected client receives a unique socket ID.
-
----
-
-# User Room
-
-Users can join a personal room:
-
-```js
-socket.emit("joinUser", userId);
-```
-
-The server creates:
-
-```text
-user:<userId>
-```
-
-This can be used later for:
-
-* Notifications
-* Online status
-* Read receipts
-* User-specific events
-
----
-
-# Conversation Room
-
-When a user opens a conversation:
-
-```js
-socket.emit(
-    "joinConversation",
-    conversationId
-);
-```
-
-The socket joins the conversation room:
-
-```text
-conversationId
-```
-
-All messages for that conversation are broadcast to the room.
-
----
-
-# Send Message
-
-Client:
-
-```js
-socket.emit("sendMessage", {
-    conversationId,
-    senderId,
-    content,
-    messageType: "text"
+    timeout: 20000,
 });
 ```
 
-Server:
+## Transport Strategy
+
+```text
+Client
+   │
+   ▼
+Try WebSocket First
+   │
+   ├── Connected
+   │      │
+   │      ▼
+   │  Real-time Socket.IO events
+   │
+   └── WebSocket unavailable
+             │
+             ▼
+       HTTP Polling fallback
+```
+
+WebSocket is preferred for lower-latency real-time communication.
+
+Polling remains available as a fallback when a direct WebSocket connection cannot be established.
+
+The same Socket.IO connection can carry multiple independent application events concurrently.
+
+---
+
+# Socket.IO Client Events
+
+The server currently listens for the following events.
+
+## Announcement RTC
+
+### Join Announcement RTC
+
+```text
+joinAnnouncementRTC
+```
+
+### Leave Announcement RTC
+
+```text
+leaveAnnouncementRTC
+```
+
+### WebRTC Offer
+
+```text
+announcement:offer
+```
+
+### WebRTC Answer
+
+```text
+announcement:answer
+```
+
+### ICE Candidate
+
+```text
+announcement:ice-candidate
+```
+
+---
+
+## Screen Share Signaling
+
+### Send Screen Share Offer
+
+```text
+screenShare:offer
+```
+
+### Send Screen Share Answer
+
+```text
+screenShare:answer
+```
+
+### Send Screen Share ICE Candidate
+
+```text
+screenShare:ice-candidate
+```
+
+### Screen Share Started
+
+```text
+screenShare:started
+```
+
+### Screen Share Stopped
+
+```text
+screenShare:stopped
+```
+
+---
+
+## User and Conversation Rooms
+
+### Join User Room
+
+```text
+joinUser
+```
+
+### Join Conversation Room
+
+```text
+joinConversation
+```
+
+### Leave Conversation Room
+
+```text
+leaveConversation
+```
+
+---
+
+## Messaging
+
+### Send Message
 
 ```text
 sendMessage
-     │
-     ▼
-MongoDB Message.create()
-     │
-     ▼
-io.to(conversationId)
-  .emit("newMessage")
 ```
 
----
-
-# File Message
-
-File messages use the same Socket.IO message flow.
-
-Example:
-
-```js
-socket.emit("sendMessage", {
-    conversationId,
-    senderId,
-    content: "",
-    messageType: "file",
-    attachment: {
-        fileName,
-        fileUrl,
-        fileType,
-        fileSize,
-        publicId,
-        resourceType
-    }
-});
-```
-
----
-
-# New Message Event
-
-Clients listen for:
-
-```js
-socket.on(
-    "newMessage",
-    handleNewMessage
-);
-```
-
-The event is used to:
-
-* Add the message to the current conversation
-* Update the conversation preview
-* Move the conversation to the top
-* Trigger mention notifications
-* Update the UI in real time
-
----
-
-# Edit Message
-
-Client:
-
-```js
-socket.emit("editMessage", {
-    messageId,
-    senderId,
-    content
-});
-```
-
-Server updates the message and emits:
-
-```js
-messageUpdated
-```
-
-Clients listen for:
-
-```js
-socket.on(
-    "messageUpdated",
-    handleMessageUpdated
-);
-```
-
-Only text messages can be edited.
-
-File messages do not expose the Edit action.
-
----
-
-# Delete Message
-
-Client:
-
-```js
-socket.emit("deleteMessage", {
-    messageId,
-    senderId
-});
-```
-
-Server:
+### Edit Message
 
 ```text
-Find message
-    │
-    ├── File?
-    │     │
-    │     └── Delete Cloudinary asset
-    │
-    ▼
-isDeleted = true
-    │
-    ▼
+editMessage
+```
+
+### Delete Message
+
+```text
+deleteMessage
+```
+
+---
+
+## Connection Lifecycle
+
+### Disconnect
+
+```text
+disconnect
+```
+
+---
+
+# Socket.IO Events Emitted by the Server
+
+The server emits or broadcasts real-time updates including:
+
+```text
+conversationUpdated
+newMessage
+messageUpdated
 messageDeleted
 ```
 
-Clients receive:
+Announcement and screen-sharing signaling events are also relayed to the relevant Socket.IO rooms.
+
+---
+
+# Concurrency Model
+
+A single Socket.IO connection can handle multiple concurrent activities.
+
+```text
+One Socket.IO Connection
+        │
+        ├── Conversation events
+        ├── Message events
+        ├── File-sharing events
+        ├── Screen-share signaling
+        ├── Announcement RTC signaling
+        └── Connection lifecycle events
+```
+
+The application does not need one separate socket per feature.
+
+Instead, features are separated by event names and Socket.IO rooms.
+
+---
+
+# Socket.IO and WebRTC
+
+Socket.IO is used for:
+
+- Application-level real-time events
+- Message events
+- Conversation events
+- Screen-sharing signaling
+- Announcement RTC signaling
+- WebRTC offer/answer exchange
+- ICE candidate exchange
+
+WebRTC is used for media/data connections such as real-time RTC streams.
+
+The Socket.IO server is therefore primarily responsible for signaling and application event delivery rather than carrying RTC media streams.
+
+---
+
+# Reconnection
+
+The current client configuration enables automatic reconnection:
 
 ```js
-socket.on(
-    "messageDeleted",
-    handleMessageDeleted
-);
+reconnection: true,
+reconnectionAttempts: Infinity,
+reconnectionDelay: 1000,
+reconnectionDelayMax: 5000,
+```
+
+A reconnect can establish a new underlying socket connection.
+
+For reliable concurrent activity handling, active application state should be restored after reconnect where required, including:
+
+```text
+User room
+Conversation room
+Announcement RTC room
+Other active feature-specific rooms
+```
+
+Recommended reconnection flow:
+
+```text
+Network interruption
+        │
+        ▼
+Socket disconnect
+        │
+        ▼
+Automatic reconnection
+        │
+        ▼
+Connection restored
+        │
+        ├── Rejoin user room
+        ├── Rejoin active conversation rooms
+        ├── Restore active RTC/signaling rooms
+        └── Resume real-time activity
 ```
 
 ---
 
-# Leave Conversation
+# Cassandra Utilities in the Repository
 
-When a user changes conversations:
-
-```js
-socket.emit(
-    "leaveConversation",
-    conversationId
-);
-```
-
-The socket leaves the previous conversation room.
-
-This prevents unnecessary message events from being processed for conversations that are no longer open.
-
----
-
-# Mentions
-
-The widget supports user mentions.
-
-Example:
+The communication server currently includes migration and database testing utilities:
 
 ```text
-@John Can you check this?
+src/migrateMongoToCassandra.js
+src/migrateAnnouncementsMongoToCassandra.js
+src/testCassandra.js
+src/testMessageCassandra.js
+src/testAnnouncementCassandra.js
 ```
 
-When the user types:
-
-```text
-@
-```
-
-the widget displays matching conversation participants.
-
-Only participants of the current conversation are shown.
-
-The current user is excluded from the mention list.
-
----
-
-# Mention Notifications
-
-When a message contains the current user's display name:
-
-```text
-@Khushboo please check this
-```
-
-the widget detects the mention and marks the conversation as mentioned.
-
-The mention badge is removed when the conversation is opened.
-
-Mentions are also checked for edited messages.
-
----
-
-# Message Model
-
-```text
-Message
-├── conversationId
-├── senderId
-├── content
-├── messageType
-├── attachment
-│   ├── fileName
-│   ├── fileUrl
-│   ├── fileType
-│   ├── fileSize
-│   ├── publicId
-│   └── resourceType
-├── status
-├── isDeleted
-└── timestamps
-```
-
----
-
-# Message Types
-
-Currently supported:
-
-```text
-text
-image
-file
-voice
-```
-
-Current implementation primarily uses:
-
-```text
-text
-file
-```
-
-The schema is prepared for:
-
-```text
-image
-voice
-```
-
----
-
-# Message Status
-
-Messages support:
-
-```text
-sent
-delivered
-read
-```
-
-Currently the primary implemented state is:
-
-```text
-sent
-```
-
-Future real-time delivery/read handling can extend this.
-
----
-
-# Database Models
-
-## Conversation
-
-```text
-Conversation
-├── type
-├── displayName
-├── participantKey
-└── timestamps
-```
-
-### Type
-
-```text
-direct
-group
-```
-
-### Unique Participant Key
-
-Direct conversations use:
-
-```text
-participantKey
-```
-
-which is unique.
-
-This prevents multiple conversations from being created for the same pair of users.
-
----
-
-# Participant
-
-```text
-Participant
-├── userId
-├── conversationId
-├── joinedAt
-└── unique index
-```
-
-Unique constraint:
-
-```text
-conversationId + userId
-```
-
-This prevents the same user from being added multiple times to the same conversation.
-
-Additional index:
-
-```text
-userId
-```
-
-This makes finding all conversations belonging to a user efficient.
-
----
-
-# Message Index
-
-Messages use:
-
-```js
-{
-    conversationId: 1,
-    createdAt: 1
-}
-```
-
-This supports efficient conversation message retrieval and chronological ordering.
-
----
-
-# Persistence
-
-MongoDB currently stores:
-
-```text
-Conversation
-Participant
-Message
-```
-
-Cloudinary stores:
-
-```text
-Actual uploaded files
-```
-
-MongoDB stores Cloudinary metadata:
-
-```text
-secure_url
-public_id
-resource_type
-filename
-file type
-file size
-```
-
----
-
-# Current Storage Architecture
-
-```text
-                  Communication Server
-                          │
-             ┌────────────┴────────────┐
-             │                         │
-          MongoDB                  Cloudinary
-             │                         │
-             │                         │
-       Conversations             Actual Files
-       Participants              Images
-       Messages                  PDFs
-       File Metadata             Documents
-                                 Excel
-                                 ZIP
-```
-
----
-
-# Host Application
-
-The host application is responsible for:
-
-* Authentication
-* User identity
-* Providing the current user
-* Providing available users
-* Providing the communication server URL
-
-The communication widget does not own the application's authentication system.
-
-The widget receives user information from the host application.
-
-Example:
-
-```js
-<WidgetContainer
-    currentUser={currentUser}
-    users={users}
-    serverUrl={serverUrl}
-/>
-```
-
----
-
-# Frontend Structure
-
-```text
-src/
-│
-├── components/
-│   ├── WidgetContainer/
-│   ├── ConversationList/
-│   ├── ConversationItem/
-│   ├── ChatWindow/
-│   ├── MessageList/
-│   ├── MessageItem/
-│   ├── ChatInput/
-│   ├── NewChatModal/
-│   └── NewGroupModal/
-│
-├── services/
-│   ├── api.js
-│   ├── config.js
-│   ├── socket.js
-│   ├── messageService.js
-│   └── conversationService.js
-│
-└── ...
-```
-
----
-
-# Backend Structure
-
-```text
-communication-server/
-│
-├── src/
-│   ├── config/
-│   │   └── cloudinary.js
-│   │
-│   ├── middleware/
-│   │   └── uploadMiddleware.js
-│   │
-│   ├── models/
-│   │   ├── conversation.js
-│   │   ├── participant.js
-│   │   └── message.js
-│   │
-│   ├── routes/
-│   │   ├── conversationRoutes.js
-│   │   ├── messageRoute.js
-│   │   └── fileRoutes.js
-│   │
-│   ├── socket/
-│   │   └── socketHandler.js
-│   │
-│   ├── app.js
-│   └── server.js
-│
-├── .env
-├── .gitignore
-└── package.json
-```
-
----
-
-# Environment Variables
-
-The communication server requires:
-
-```env
-MONGODB_URI=your_mongodb_connection_string
-
-PORT=5000
-
-CLOUDINARY_CLOUD_NAME=your_cloud_name
-CLOUDINARY_API_KEY=your_api_key
-CLOUDINARY_API_SECRET=your_api_secret
-```
-
-Never commit `.env` to GitHub.
-
----
-
-# Running the Communication Server
-
-Install dependencies:
-
-```bash
-npm install
-```
-
-Start the server:
-
-```bash
-npm start
-```
-
-Development mode:
+These files are repository utilities and are separate from the normal development command:
 
 ```bash
 npm run dev
 ```
 
-The server runs on:
+Review the source and configuration before manually running migration or test utility files.
+
+---
+
+# Widget Package Commands
+
+Inside `widget/`:
+
+## Start development
+
+```bash
+npm run dev
+```
+
+## Build distributable package
+
+```bash
+npm run build
+```
+
+## Preview build
+
+```bash
+npm run preview
+```
+
+## Lint source
+
+```bash
+npm run lint
+```
+
+The widget package exposes:
 
 ```text
-http://localhost:5000
+.
+./style.css
+```
+
+The built package output is:
+
+```text
+dist/
 ```
 
 ---
 
-# API Summary
+# Host Application Commands
 
-| Method | Endpoint                          | Purpose                        |
-| ------ | --------------------------------- | ------------------------------ |
-| POST   | `/api/conversations/direct`       | Create/get direct conversation |
-| POST   | `/api/conversations/group`        | Create group                   |
-| GET    | `/api/conversations/user/:userId` | Get user's conversations       |
-| GET    | `/api/messages/:conversationId`   | Get message history            |
-| POST   | `/api/files/upload`               | Upload file to Cloudinary      |
+Each host application currently supports the following scripts:
 
----
-
-# Socket Event Summary
-
-| Event               | Direction       | Purpose                   |
-| ------------------- | --------------- | ------------------------- |
-| `joinUser`          | Client → Server | Join personal user room   |
-| `joinConversation`  | Client → Server | Join conversation room    |
-| `leaveConversation` | Client → Server | Leave conversation room   |
-| `sendMessage`       | Client → Server | Send text/file message    |
-| `newMessage`        | Server → Client | Broadcast new message     |
-| `editMessage`       | Client → Server | Edit text message         |
-| `messageUpdated`    | Server → Client | Broadcast edited message  |
-| `deleteMessage`     | Client → Server | Delete message            |
-| `messageDeleted`    | Server → Client | Broadcast deleted message |
-
----
-
-# Current Features
-
-* [x] One-to-one conversations
-* [x] Group conversations
-* [x] Conversation participant management
-* [x] Persistent message history
-* [x] Real-time messaging
-* [x] Socket.IO conversation rooms
-* [x] Message editing
-* [x] Message deletion
-* [x] Soft deleted messages
-* [x] User mentions
-* [x] Mention notifications/badges
-* [x] File sharing
-* [x] Image preview
-* [x] PDF support
-* [x] Word document support
-* [x] Excel support
-* [x] ZIP support
-* [x] TXT support
-* [x] 20 MB file limit
-* [x] Cloudinary file storage
-* [x] Cloudinary file deletion
-* [x] Persistent file metadata
-* [x] Persistent conversation last-message preview
-* [x] Open/download files
-* [x] Responsive/mobile conversation UI
-
----
-
-# Planned Features
-
-## Real-Time Features
-
-* [ ] Typing indicator
-* [ ] Read receipts
-* [ ] Delivered status
-* [ ] Online/offline status
-* [ ] Last seen
-* [ ] Unread message count
-
-## File Features
-
-* [ ] Upload progress
-* [ ] Better file type icons
-* [ ] File upload cancellation
-* [ ] File preview for additional formats
-* [ ] Improved upload error handling
-
-## Scalability
-
-Current:
-
-```text
-MongoDB
-    +
-Cloudinary
+```bash
+npm run dev
+npm run build
+npm run lint
+npm run preview
 ```
 
-Planned:
+Host applications:
 
 ```text
-Cassandra
-    +
-Cloudinary
-```
-
-MongoDB is currently used for persistent conversation and message state.
-
-As the communication system scales, conversation/message storage can be migrated to Cassandra while keeping Cloudinary as the file-storage layer.
-
-The frontend and Socket.IO message contract should remain largely unchanged during this migration.
-
----
-
-# Future Scalable Architecture
-
-```text
-                         Host Application
-                                │
-                         Authentication
-                                │
-                                ▼
-                    Communication Widget
-                                │
-                    ┌───────────┴───────────┐
-                    │                       │
-                 REST API               Socket.IO
-                    │                       │
-                    └───────────┬───────────┘
-                                │
-                       Communication Server
-                                │
-                    ┌───────────┴───────────┐
-                    │                       │
-                Cassandra               Cloudinary
-                    │                       │
-             Conversations              Files
-             Participants               Images
-             Messages                   Documents
+demo-host-app
+widget-host-test
+dashboard-host
+ecommerce-host
 ```
 
 ---
 
-# Design Principles
+# Git Workflow
 
-## Separation of Responsibilities
+## Check current status
 
-The architecture separates:
+```bash
+git status
+```
+
+## Check current branch
+
+```bash
+git branch
+```
+
+## Pull latest changes
+
+```bash
+git pull origin main
+```
+
+## Add all changes
+
+```bash
+git add .
+```
+
+## Add only documentation files
+
+```bash
+git add Readme.md ISSUES.md
+```
+
+## Commit
+
+```bash
+git commit -m "Update project documentation"
+```
+
+## Push
+
+```bash
+git push origin main
+```
+
+## View recent commits
+
+```bash
+git log --oneline -5
+```
+
+## View remote repository
+
+```bash
+git remote -v
+```
+
+---
+
+# Recommended Development Workflow
+
+Use separate terminals:
+
+## Terminal 1
+
+```bash
+docker start cassandra-dev
+```
+
+## Terminal 2
+
+```bash
+cd communication-server
+npm run dev
+```
+
+## Terminal 3
+
+```bash
+cd widget
+npm run dev
+```
+
+## Terminal 4
+
+Run the host application currently being used for testing:
+
+```bash
+cd widget-host-test
+npm run dev
+```
+
+Other host applications do not need to run simultaneously unless they are specifically being tested.
+
+---
+
+# Current Architecture
 
 ```text
 Host Application
-    ↓
-Authentication / Identity
-
-Communication Server
-    ↓
-Conversation / Messaging
-
-MongoDB / Cassandra
-    ↓
-Persistent message state
-
-Cloudinary
-    ↓
-File storage
-
-Socket.IO
-    ↓
-Real-time communication
+       │
+       ▼
+Reusable React Communication Widget
+       │
+       ├── REST API requests
+       │
+       └── Socket.IO real-time events
+                 │
+                 ▼
+       Express + Socket.IO Server
+                 │
+                 ├── Cassandra repositories
+                 │
+                 └── Cloudinary file storage
 ```
 
-This allows each component to evolve independently.
+The architecture separates:
+
+- UI and embeddable widget functionality
+- REST-based data retrieval and management
+- Real-time Socket.IO communication
+- WebRTC signaling
+- Cassandra persistence
+- Cloudinary file storage
 
 ---
 
-# Concurrency Considerations
+# Documentation Notes
 
-Direct conversation creation uses a unique:
-
-```text
-participantKey
-```
-
-and handles MongoDB duplicate-key errors.
-
-This prevents two simultaneous requests from creating duplicate direct conversations.
-
-Participant records use:
-
-```text
-conversationId + userId
-```
-
-as a unique combination.
-
-This prevents duplicate participant records.
-
----
-
-# Message Ordering
-
-Messages contain:
-
-```text
-createdAt
-```
-
-and are sorted chronologically.
-
-Conversation lists are sorted using:
-
-```text
-lastMessageTime
-```
-
-so conversations with recent activity appear first.
-
----
-
-# Message Loading
-
-When a conversation is opened:
-
-```text
-Select conversation
-        ↓
-Join Socket.IO room
-        ↓
-Fetch message history
-        ↓
-Merge REST history
-with messages received
-during loading
-        ↓
-Remove duplicates
-        ↓
-Sort by createdAt
-        ↓
-Render messages
-```
-
-This prevents race conditions where a new Socket.IO message arrives while message history is being fetched.
-
----
-
-# File Storage Design
-
-Files are intentionally separated from message storage.
-
-MongoDB/Cassandra stores metadata:
-
-```text
-fileName
-fileUrl
-fileType
-fileSize
-publicId
-resourceType
-```
-
-Cloudinary stores the actual binary file.
-
-This avoids storing large binary files directly inside the database.
-
----
-
-# Security Notes
-
-* Cloudinary API secrets remain server-side.
-* `.env` must not be committed.
-* File type validation exists on the backend.
-* File size is limited to 20 MB.
-* File uploads are handled by the communication server.
-* Users can only edit/delete their own messages through sender validation.
-* Cloudinary assets are deleted when their associated file message is deleted.
-
----
-
-# Status
-
-The communication widget currently supports a complete basic real-time messaging workflow with persistent conversations, real-time Socket.IO communication, mentions, and Cloudinary-backed file sharing.
-
-The next major scalability step is migration of message/conversation persistence from MongoDB to Cassandra.
-
-````
-
-### One correction I intentionally made
-
-Your old README's `Message` model stopped at:
-
-```text
-Message
-├── conversationId
-├── senderId
-├── content
-├── messageType
-├── status
-├── isDeleted
-└── timestamps
-````
-
-but your **current implementation** has an `attachment` object, so it should now be documented as:
-
-```text
-Message
-├── conversationId
-├── senderId
-├── content
-├── messageType
-├── attachment
-│   ├── fileName
-│   ├── fileUrl
-│   ├── fileType
-│   ├── fileSize
-│   ├── publicId
-│   └── resourceType
-├── status
-├── isDeleted
-└── timestamps
-```
-
-That reflects what you actually built rather than the earlier local-storage version.
-
-
-
-
-Announcemnt services 
-| Function             | Method | Route                                                                      |
-| -------------------- | ------ | -------------------------------------------------------------------------- |
-| Create portal        | POST   | `/announcement-portals`                                                    |
-| Get user's portals   | GET    | `/announcement-portals?userId=...`                                         |
-| Add members          | POST   | `/announcement-portals/:portalId/members`                                  |
-| Create announcement  | POST   | `/announcement-portals/:portalId/announcements`                            |
-| Get announcements    | GET    | `/announcement-portals/:portalId/announcements?userId=...`                 |
-| Get one announcement | GET    | `/announcement-portals/:portalId/announcements/:announcementId?userId=...` |
-| Update announcement  | PATCH  | `/announcement-portals/:portalId/announcements/:announcementId`            |
-| Delete announcement  | DELETE | `/announcement-portals/:portalId/announcements/:announcementId?userId=...` |
-
-
-
-
-connecting Cassndra
-
- docker destop container active
-terminal
-cmd 1.  docker start cassandra-dev
-start cqlsh
-cmd 2. docker exec -it cassandra-dev cqlsh
-cmd 3.  use navriti;
+- Replace placeholder environment values with local credentials.
+- Do not commit Cloudinary secrets.
+- Confirm local Cassandra keyspace and Docker container names before changing database commands.
+- Keep `ISSUES.md` limited to unresolved technical issues and follow-up work.
