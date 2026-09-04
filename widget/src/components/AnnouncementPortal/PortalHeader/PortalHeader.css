@@ -1,0 +1,73 @@
+
+
+/* ================================
+   SCREEN SHARE TOGGLE
+================================ */
+
+.rtc-call-toggle-button {
+    width: 38px;
+    height: 38px;
+
+    flex-shrink: 0;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border: none;
+    border-radius: 9px;
+
+    background: transparent;
+
+    color: #69707d;
+
+    font-size: 17px;
+
+    cursor: pointer;
+
+    transition:
+        background 0.2s ease,
+        color 0.2s ease,
+        transform 0.15s ease;
+}
+
+.rtc-call-toggle-button:hover {
+    background: #eef0ff;
+
+    color: #6366f1;
+}
+
+.rtc-call-toggle-button.active {
+    background: #6366f1;
+
+    color: white;
+}
+
+.rtc-call-toggle-button:active {
+    transform: scale(0.92);
+}
+
+
+/* ================================
+   SCREEN SHARE SPACE
+================================ */
+
+.rtc-screen-share-space {
+    display: none;
+
+    flex: 1;
+
+    min-height: 0;
+
+    position: relative;
+
+    overflow: hidden;
+
+    background: #171923;
+}
+
+.rtc-screen-share-space.visible {
+    display: flex;
+
+    flex-direction: column;
+}

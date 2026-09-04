@@ -1,9 +1,12 @@
+import "./PortalHeader.css";
 function PortalHeader({
     portal,
     memberCount = 0,
     showMembers,
     showPortalMenu,
     canManage,
+    showScreenShare,
+    onToggleScreenShare,
     onCreateAnnouncement,
     onToggleMenu,
     onToggleMembers,
@@ -14,6 +17,7 @@ function PortalHeader({
     if (!portal) {
         return null;
     }
+    
 
     return (
         <div className="announcement-content-header">
@@ -54,6 +58,29 @@ function PortalHeader({
                         + Announcement
                     </button>
                 )}
+                <button
+                    type="button"
+                    className={`rtc-call-toggle-button ${
+                        showScreenShare
+                            ? "active"
+                            : ""
+                    }`}
+                    onClick={onToggleScreenShare}
+                    aria-label={
+                        showScreenShare
+                            ? "Back to announcements"
+                            : "Open screen sharing"
+                    }
+                    title={
+                        showScreenShare
+                            ? "Back to announcements"
+                            : "Screen sharing"
+                    }
+                >
+                    {showScreenShare
+                        ? "←"
+                        : "▣"}
+                </button>
 
                 <button
                     type="button"

@@ -19,6 +19,7 @@
 @import "./components/AnnouncementPortal/CreateAnnouncementModal/CreateAnnouncementModal.css";
 @import "./components/AnnouncementPortal/CreatePortalModal/CreatePortalModal.css";
 @import "./components/AnnouncementPortal/EditAnnouncementModal/EditAnnouncementModal.css";
+@import "./components/AnnouncementPortal/PortalHeader/PortalHeader.css";
 @import "./components/AnnouncementPortal/portal-premium.css";
 @import "./components/modal-premium.css";
 

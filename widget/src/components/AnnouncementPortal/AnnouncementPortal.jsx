@@ -44,7 +44,7 @@ import CreatePortalModal
 
 import EditAnnouncementModal
     from "./EditAnnouncementModal/EditAnnouncementModal.jsx";
-
+import ScreenShare from "../ScreenShare/ScreenShare.jsx";
 import "./AnnouncementPortal.css";
 
 
@@ -52,7 +52,8 @@ function AnnouncementPortal({
     currentUser,
     users = [],
     onBack,
-}) {
+}) 
+{
 
     const userId =
         currentUser?.userId;
@@ -127,6 +128,9 @@ function AnnouncementPortal({
 
     const remoteUserRef =
         useRef(null);
+
+    const [showScreenShare, setShowScreenShare] =
+        useState(false);
 
 
 
@@ -1581,6 +1585,7 @@ function AnnouncementPortal({
                 selectedPortal={selectedPortal}
                 onSelect={(portal) => {
                     setSelectedPortal(portal);
+                    setShowScreenShare(false);
                     setShowMembers(false);
                     setShowPortalMenu(false);
                     setShowAddMember(false);
@@ -1647,6 +1652,13 @@ function AnnouncementPortal({
                         showPortalMenu={showPortalMenu}
                         canManage={
                             selectedPortal.role === "host"
+                        }
+                        showScreenShare={showScreenShare}
+
+                        onToggleScreenShare={() =>
+                            setShowScreenShare(
+                                (prev) => !prev
+                            )
                         }
                         onCreateAnnouncement={() =>
                             setIsCreateAnnouncementOpen(
@@ -1735,18 +1747,32 @@ function AnnouncementPortal({
                         }}
                     />
 
+                    {/* NORMAL ANNOUNCEMENT SPACE */}
 
-                    <PortalAnnouncements
-                        announcements={announcements}
-                        selectedPortal={selectedPortal}
-                        loading={loadingAnnouncements}
-                        onDelete={
-                            handleDeleteAnnouncement
-                        }
-                        onEdit={
-                            handleEditAnnouncement
-                        }
-                    />
+                    {!showScreenShare && (
+                        <PortalAnnouncements
+                            announcements={announcements}
+                            selectedPortal={selectedPortal}
+                            loading={loadingAnnouncements}
+                            onDelete={handleDeleteAnnouncement}
+                            onEdit={handleEditAnnouncement}
+                        />
+                    )}
+
+
+                    {/*  SCREEN SHARE SPACE */}
+
+                    {showScreenShare && (
+                        <div className="rtc-screen-share-space visible">
+                            <ScreenShare
+                                conversationId={selectedPortal._id}
+                                currentUser={currentUser}
+                                participantIds={portalMembers}
+                                booleanConnection={showScreenShare}
+                            />
+                        </div>
+                    )}
+
 
                 </div>
 
