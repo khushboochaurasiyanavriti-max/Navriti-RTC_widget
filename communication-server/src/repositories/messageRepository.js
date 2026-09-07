@@ -3,9 +3,8 @@ import cassandra from "../config/cassandra.js";
 import crypto from "crypto";
 
 import {
-    findConversationById,
+    findById,
 } from "./conversationRepository.js";
-
 
 const generateMessageId = () => {
     return crypto
@@ -109,8 +108,9 @@ const getPlatformConversation = async ({
 
 
     const conversation =
-        await findConversationById(
-            conversationId
+        await findById(
+            conversationId,
+            platformId,
         );
 
 

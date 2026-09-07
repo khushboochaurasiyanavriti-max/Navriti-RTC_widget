@@ -221,7 +221,7 @@ function WidgetContainer({
 
     useEffect(() => {
 
-        if (!serverUrl || !senderId) {
+        if (!serverUrl || !senderId || !platformId) {
             return;
         }
 
@@ -235,12 +235,14 @@ function WidgetContainer({
 
 
         initializeSocket(
-            senderId
+            senderId,
+            platformId,
         );
 
     }, [
         serverUrl,
         senderId,
+        platformId,
     ]);
 
 
