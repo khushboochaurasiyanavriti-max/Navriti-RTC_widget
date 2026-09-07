@@ -42,6 +42,7 @@ const createAnnouncementPortal = async (req, res) => {
             description,
             targetAudience = "all",
             members = [],
+            platformId,
         } = req.body || {};
 
         console.log(
@@ -49,7 +50,7 @@ const createAnnouncementPortal = async (req, res) => {
             req.body
         );
 
-        if (!userId) {
+        if (!userId || !platformId) {
             return res.status(400).json({
                 message: "userId is required",
             });
@@ -101,6 +102,7 @@ const createAnnouncementPortal = async (req, res) => {
                 description?.trim() || "",
             createdBy: userId,
             targetAudience,
+            platformId,
         });
 
         const membership = await addMember({
@@ -1157,7 +1159,7 @@ const getAnnouncement = async (
 const getUserAnnouncementPortals =
     async (req, res) => {
         try {
-            const { userId } =
+            const { userId, platformId } =
                 req.query;
 
             if (!userId) {
@@ -1202,7 +1204,7 @@ const getUserAnnouncementPortals =
                         membership.portalId
                     );
 
-                if (!portal) {
+                if (!portal || portal.platformId !== platformId) {
                     continue;
                 }
 

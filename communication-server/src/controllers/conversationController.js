@@ -15,6 +15,9 @@ import {
 } from "../repositories/messageRepository.js";
 
 
+const platformError = (res) => res.status(400).json({ message: "platformId is required" });
+
+
 
 
 // direct chat between two users
@@ -24,11 +27,14 @@ export const createOrGetDirect = async (req, res) => {
         const {
             currentUserId,
             targetUserId,
+            platformId,
         } = req.body;
+        if(!platformId) 
+            return platformError(res);
 
-        if (!currentUserId || !targetUserId) {
+        if (!currentUserId || !targetUserId || !platformId) {
             return res.status(400).json({
-                message: "Both user IDs are required",
+                message: "Current user ID, target user ID and platform ID are required",
             });
         }
 
@@ -38,6 +44,7 @@ export const createOrGetDirect = async (req, res) => {
         } = await getOrCreateDirect({
             currentUserId,
             targetUserId,
+            platformId,
         });
 
         // Only add participants when the conversation
@@ -49,6 +56,7 @@ export const createOrGetDirect = async (req, res) => {
                     currentUserId,
                     targetUserId,
                 ],
+                platformId,
             });
         }
 
@@ -75,9 +83,13 @@ export const createOrGetDirect = async (req, res) => {
 export const getUserConversations = async (req, res) => {
     try {
         const { userId } = req.params;
+        const { platformId } = req.query;
 
-        // Get all conversations for this user from Cassandra
-        const participantRows = await getByUserId(userId);
+        if(!platformId) 
+            return platformError(res);
+
+        // Get only conversations for this user on this platform.
+        const participantRows = await getByUserId(userId, platformId);
 
         const conversationIds = participantRows.map(
             (participant) => participant.conversation_id
@@ -89,7 +101,8 @@ export const getUserConversations = async (req, res) => {
 
         // Get conversations from Cassandra
         const conversations = await findByIds(
-            conversationIds
+            conversationIds,
+            platformId
         );
 
         const response = [];
@@ -102,7 +115,8 @@ export const getUserConversations = async (req, res) => {
             // Get ALL participants from Cassandra
             const conversationParticipants =
                 await getByConversationId(
-                    conversation.conversation_id
+                    conversation.conversation_id,
+                    platformId,
                 );
 
             const participantIds =
@@ -204,12 +218,14 @@ export const createGroup = async (req, res) => {
             groupName,
             currentUserId,
             participants,
+            platformId,
         } = req.body;
 
         // -----------------------------
         // Validate request
         // -----------------------------
-
+        if(!platformId) 
+            return platformError(res);
         if (
             !groupName?.trim() ||
             !currentUserId ||
@@ -239,6 +255,7 @@ export const createGroup = async (req, res) => {
         const conversation =
             await createGroupCassandra({
                 displayName: groupName.trim(),
+                platformId,
             });
 
         // -----------------------------
@@ -249,6 +266,7 @@ export const createGroup = async (req, res) => {
             conversationId:
                 conversation.conversationId,
             userIds: allParticipants,
+            platformId,
         });
 
         // -----------------------------

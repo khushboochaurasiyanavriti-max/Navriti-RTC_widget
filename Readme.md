@@ -1151,6 +1151,7 @@ Use separate terminals:
 docker start cassandra-dev
 ```
 
+
 ## Terminal 2
 
 ```bash

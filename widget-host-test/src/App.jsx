@@ -101,6 +101,7 @@ function App() {
                     currentUser={currentUser}
                     users={users}
                     serverUrl={serverUrl}
+                    platformId="widget-test-platform"
                     features={{
                         chat: true,
                         groupChat: true,

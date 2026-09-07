@@ -121,6 +121,7 @@ function App() {
           currentUser={currentUser}
           users={users}
           serverUrl="http://localhost:5000"
+          platformId="demo-platform"
           features={{
               chat: true,
               groupChat: true,

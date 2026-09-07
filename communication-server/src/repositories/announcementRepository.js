@@ -99,6 +99,9 @@ const rowToPortal = (row) => {
 
         updatedAt:
             row.updated_at,
+
+        platformId:
+            row.platform_id,
     };
 };
 
@@ -194,12 +197,14 @@ export const createPortal = async ({
     targetAudience,
     createdAt = new Date(),
     updatedAt = createdAt,
+    platformId,
 }) => {
 
     await cassandra.execute(
         `
             INSERT INTO announcement_portals_by_id (
                 portal_id,
+                platform_id,
                 name,
                 description,
                 created_by,
@@ -207,10 +212,11 @@ export const createPortal = async ({
                 created_at,
                 updated_at
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         `,
         [
             portalId,
+            platformId,
             name,
             description || "",
             createdBy,
@@ -240,6 +246,8 @@ export const createPortal = async ({
         createdAt,
 
         updatedAt,
+
+        platformId,
     };
 };
 

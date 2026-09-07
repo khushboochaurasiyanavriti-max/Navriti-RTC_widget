@@ -1,29 +1,46 @@
+
 import cassandra from "../config/cassandra.js";
 import crypto from "crypto";
 
+import {
+    findConversationById,
+} from "./conversationRepository.js";
+
+
 const generateMessageId = () => {
-    return crypto.randomBytes(12).toString("hex");
+    return crypto
+        .randomBytes(12)
+        .toString("hex");
 };
+
 
 const serializeAttachment = (attachment) => {
     if (!attachment) {
         return null;
     }
 
-    return JSON.stringify(attachment);
+    return JSON.stringify(
+        attachment
+    );
 };
 
-const deserializeAttachment = (attachment) => {
+
+const deserializeAttachment = (
+    attachment
+) => {
     if (!attachment) {
         return null;
     }
 
     try {
-        return JSON.parse(attachment);
+        return JSON.parse(
+            attachment
+        );
     } catch {
         return null;
     }
 };
+
 
 const rowToMessage = (row) => {
     if (!row) {
@@ -31,22 +48,98 @@ const rowToMessage = (row) => {
     }
 
     return {
-        _id: row.message_id,
-        conversationId: row.conversation_id,
-        senderId: row.sender_id,
-        content: row.content || "",
-        messageType: row.message_type || "text",
-        attachment: deserializeAttachment(row.attachment),
-        status: row.status || "sent",
-        isDeleted: row.is_deleted || false,
-        createdAt: row.created_at,
-        updatedAt: row.updated_at,
+        _id:
+            row.message_id,
+
+        conversationId:
+            row.conversation_id,
+
+        senderId:
+            row.sender_id,
+
+        content:
+            row.content || "",
+
+        messageType:
+            row.message_type ||
+            "text",
+
+        attachment:
+            deserializeAttachment(
+                row.attachment
+            ),
+
+        status:
+            row.status ||
+            "sent",
+
+        isDeleted:
+            row.is_deleted ||
+            false,
+
+        createdAt:
+            row.created_at,
+
+        updatedAt:
+            row.updated_at,
     };
 };
 
 
+/*
+ * ---------------------------------------------------------
+ * Verify that the conversation belongs to the platform.
+ *
+ * This is the central isolation check used by every message
+ * operation.
+ * ---------------------------------------------------------
+ */
+
+const getPlatformConversation = async ({
+    conversationId,
+    platformId,
+}) => {
+
+    if (
+        !conversationId ||
+        !platformId
+    ) {
+        return null;
+    }
+
+
+    const conversation =
+        await findConversationById(
+            conversationId
+        );
+
+
+    if (!conversation) {
+        return null;
+    }
+
+
+    if (
+        conversation.platformId !==
+        platformId
+    ) {
+        return null;
+    }
+
+
+    return conversation;
+};
+
+
+/*
+ * ---------------------------------------------------------
+ * Create Message
+ * ---------------------------------------------------------
+ */
+
 export const createMessage = async ({
     conversationId,
+    platformId,
     senderId,
     content = "",
     messageType = "text",
@@ -54,11 +147,34 @@ export const createMessage = async ({
     status = "sent",
 }) => {
 
-    const messageId = generateMessageId();
-    const now = new Date();
+    /*
+     * Platform isolation validation.
+     */
+
+    const conversation =
+        await getPlatformConversation({
+            conversationId,
+            platformId,
+        });
+
+
+    if (!conversation) {
+        return null;
+    }
+
+
+    const messageId =
+        generateMessageId();
+
+    const now =
+        new Date();
+
 
     const attachmentJson =
-        serializeAttachment(attachment);
+        serializeAttachment(
+            attachment
+        );
+
 
     await cassandra.batch(
         [
@@ -78,6 +194,7 @@ export const createMessage = async ({
                     )
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 `,
+
                 params: [
                     conversationId,
                     now,
@@ -91,6 +208,7 @@ export const createMessage = async ({
                     now,
                 ],
             },
+
             {
                 query: `
                     INSERT INTO messages_by_id (
@@ -107,6 +225,7 @@ export const createMessage = async ({
                     )
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 `,
+
                 params: [
                     messageId,
                     conversationId,
@@ -121,29 +240,69 @@ export const createMessage = async ({
                 ],
             },
         ],
-        { prepare: true }
+
+        {
+            prepare: true,
+        }
     );
 
+
     return {
-        _id: messageId,
+        _id:
+            messageId,
+
         conversationId,
+
         senderId,
+
         content,
+
         messageType,
+
         attachment,
+
         status,
-        isDeleted: false,
-        createdAt: now,
-        updatedAt: now,
+
+        isDeleted:
+            false,
+
+        createdAt:
+            now,
+
+        updatedAt:
+            now,
     };
 };
 
 
+/*
+ * ---------------------------------------------------------
+ * Get Messages
+ * ---------------------------------------------------------
+ */
+
 export const getMessages = async ({
     conversationId,
+    platformId,
     limit = 100,
     before = null,
 }) => {
+
+    /*
+     * Verify conversation ownership before reading messages.
+     */
+
+    const conversation =
+        await getPlatformConversation({
+            conversationId,
+            platformId,
+        });
+
+
+    if (!conversation) {
+        return null;
+    }
+
 
     let query = `
         SELECT *
@@ -151,98 +310,202 @@ export const getMessages = async ({
         WHERE conversation_id = ?
     `;
 
-    const params = [conversationId];
+
+    const params = [
+        conversationId,
+    ];
+
 
     if (before) {
+
         query += `
             AND created_at < ?
         `;
 
-        params.push(before);
+
+        params.push(
+            before
+        );
     }
+
 
     query += `
         LIMIT ?
     `;
 
-    params.push(Number(limit));
 
-    const result = await cassandra.execute(
-        query,
-        params,
-        { prepare: true }
+    params.push(
+        Number(limit)
     );
 
-    // Cassandra returns newest → oldest because
-    // created_at is DESC.
-    // Frontend expects oldest → newest.
+
+    const result =
+        await cassandra.execute(
+            query,
+            params,
+            {
+                prepare: true,
+            }
+        );
+
+
+    /*
+     * Cassandra returns newest → oldest.
+     * Frontend expects oldest → newest.
+     */
+
     return result.rows
-        .map(rowToMessage)
+        .map(
+            rowToMessage
+        )
         .reverse();
 };
 
 
-export const findMessageById = async (
-    messageId
-) => {
+/*
+ * ---------------------------------------------------------
+ * Find Message By ID
+ *
+ * This is platform protected.
+ *
+ * A message ID alone is not sufficient to retrieve data.
+ * ---------------------------------------------------------
+ */
 
-    const result = await cassandra.execute(
-        `
-            SELECT *
-            FROM messages_by_id
-            WHERE message_id = ?
-        `,
-        [messageId],
-        { prepare: true }
-    );
+export const findMessageById = async ({
+    messageId,
+    platformId,
+}) => {
 
-    return rowToMessage(result.rows[0]);
+    if (
+        !messageId ||
+        !platformId
+    ) {
+        return null;
+    }
+
+
+    const result =
+        await cassandra.execute(
+            `
+                SELECT *
+                FROM messages_by_id
+                WHERE message_id = ?
+            `,
+            [
+                messageId,
+            ],
+            {
+                prepare: true,
+            }
+        );
+
+
+    const message =
+        rowToMessage(
+            result.rows[0]
+        );
+
+
+    if (!message) {
+        return null;
+    }
+
+
+    /*
+     * Verify that the message's conversation
+     * belongs to the requested platform.
+     */
+
+    const conversation =
+        await getPlatformConversation({
+            conversationId:
+                message.conversationId,
+
+            platformId,
+        });
+
+
+    if (!conversation) {
+        return null;
+    }
+
+
+    return message;
 };
 
 
+/*
+ * ---------------------------------------------------------
+ * Update Message Content
+ * ---------------------------------------------------------
+ */
+
 export const updateMessageContent = async ({
     messageId,
+    platformId,
     senderId,
     content,
 }) => {
 
+    /*
+     * findMessageById already validates platform ownership.
+     */
+
     const message =
-        await findMessageById(messageId);
+        await findMessageById({
+            messageId,
+            platformId,
+        });
+
 
     if (!message) {
         return null;
     }
 
-    if (message.senderId !== senderId) {
+
+    if (
+        message.senderId !==
+        senderId
+    ) {
         return null;
     }
 
-    const updatedAt = new Date();
+
+    const updatedAt =
+        new Date();
+
 
     await cassandra.batch(
         [
             {
                 query: `
                     UPDATE messages_by_id
-                    SET content = ?,
+                    SET
+                        content = ?,
                         updated_at = ?
                     WHERE message_id = ?
                 `,
+
                 params: [
                     content,
                     updatedAt,
                     messageId,
                 ],
             },
+
             {
                 query: `
                     UPDATE messages_by_conversation
-                    SET content = ?,
+                    SET
+                        content = ?,
                         updated_at = ?
-                    WHERE conversation_id = ?
-                      AND created_at = ?
-                      AND message_id = ?
+                    WHERE
+                        conversation_id = ?
+                        AND created_at = ?
+                        AND message_id = ?
                 `,
+
                 params: [
                     content,
                     updatedAt,
@@ -252,58 +515,93 @@ export const updateMessageContent = async ({
                 ],
             },
         ],
-        { prepare: true }
+
+        {
+            prepare: true,
+        }
     );
+
 
     return {
         ...message,
+
         content,
+
         updatedAt,
     };
 };
 
+
+/*
+ * ---------------------------------------------------------
+ * Soft Delete Message
+ * ---------------------------------------------------------
+ */
 
 export const softDeleteMessage = async ({
     messageId,
+    platformId,
     senderId,
 }) => {
 
+    /*
+     * findMessageById validates
+     * message → conversation → platform ownership.
+     */
+
     const message =
-        await findMessageById(messageId);
+        await findMessageById({
+            messageId,
+            platformId,
+        });
+
 
     if (!message) {
         return null;
     }
 
-    if (message.senderId !== senderId) {
+
+    if (
+        message.senderId !==
+        senderId
+    ) {
         return null;
     }
 
-    const updatedAt = new Date();
+
+    const updatedAt =
+        new Date();
+
 
     await cassandra.batch(
         [
             {
                 query: `
                     UPDATE messages_by_id
-                    SET is_deleted = true,
+                    SET
+                        is_deleted = true,
                         updated_at = ?
                     WHERE message_id = ?
                 `,
+
                 params: [
                     updatedAt,
                     messageId,
                 ],
             },
+
             {
                 query: `
                     UPDATE messages_by_conversation
-                    SET is_deleted = true,
+                    SET
+                        is_deleted = true,
                         updated_at = ?
-                    WHERE conversation_id = ?
-                      AND created_at = ?
-                      AND message_id = ?
+                    WHERE
+                        conversation_id = ?
+                        AND created_at = ?
+                        AND message_id = ?
                 `,
+
                 params: [
                     updatedAt,
                     message.conversationId,
@@ -312,27 +610,72 @@ export const softDeleteMessage = async ({
                 ],
             },
         ],
-        { prepare: true }
+
+        {
+            prepare: true,
+        }
     );
+
 
     return {
         ...message,
-        isDeleted: true,
+
+        isDeleted:
+            true,
+
         updatedAt,
     };
 };
 
-export const getLatestMessage = async (conversationId) => {
-    const result = await cassandra.execute(
-        `
-            SELECT *
-            FROM messages_by_conversation
-            WHERE conversation_id = ?
-            LIMIT 1
-        `,
-        [conversationId],
-        { prepare: true }
-    );
 
-    return rowToMessage(result.rows[0]);
+/*
+ * ---------------------------------------------------------
+ * Get Latest Message
+ * ---------------------------------------------------------
+ */
+
+export const getLatestMessage = async ({
+    conversationId,
+    platformId,
+}) => {
+
+    /*
+     * Verify conversation belongs to platform.
+     */
+
+    const conversation =
+        await getPlatformConversation({
+            conversationId,
+            platformId,
+        });
+
+
+    if (!conversation) {
+        return null;
+    }
+
+
+    const result =
+        await cassandra.execute(
+            `
+                SELECT *
+                FROM messages_by_conversation
+                WHERE conversation_id = ?
+                LIMIT 1
+            `,
+
+            [
+                conversationId,
+            ],
+
+            {
+                prepare: true,
+            }
+        );
+
+
+    return rowToMessage(
+        result.rows[0]
+    );
 };
+

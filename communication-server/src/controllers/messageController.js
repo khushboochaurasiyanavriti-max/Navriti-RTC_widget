@@ -1,11 +1,12 @@
-import {
-    getMessages as getCassandraMessages,
-} from "../repositories/messageRepository.js";
+import { getMessages as getCassandraMessages } from "../repositories/messageRepository.js";
+import { assertConversationPlatform } from "../repositories/conversationRepository.js";
 
 const getMessages = async (req, res) => {
     try {
         const { conversationId } = req.params;
-        const { limit = 100, before } = req.query;
+        const { limit = 100, before, platformId } = req.query;
+        if (!platformId) return res.status(400).json({ message: "platformId is required" });
+        await assertConversationPlatform(conversationId, platformId);
 
         if (before) {
             const beforeDate = new Date(before);

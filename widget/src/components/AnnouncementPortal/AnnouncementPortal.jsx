@@ -1,9 +1,4 @@
-import {
-    useEffect,
-    useMemo,
-    useState,
-    useRef,
-} from "react";
+import { useEffect, useMemo, useState,useRef } from "react";
 
 import {
     getUserAnnouncementPortals,
@@ -17,6 +12,7 @@ import {
     removePortalMember,
     updatePortalMemberRole,
     deleteAnnouncementPortal,
+
 } from "../../services/announcementPortalService";
 
 import {
@@ -48,19 +44,17 @@ import CreatePortalModal
 
 import EditAnnouncementModal
     from "./EditAnnouncementModal/EditAnnouncementModal.jsx";
-
-import ScreenShare
-    from "../ScreenShare/ScreenShare.jsx";
-
+import ScreenShare from "../ScreenShare/ScreenShare.jsx";
 import "./AnnouncementPortal.css";
-import "../ChatWindow/ChatWindow.css";
 
 
 function AnnouncementPortal({
     currentUser,
     users = [],
+    platformId,
     onBack,
-}) {
+}) 
+{
 
     const userId =
         currentUser?.userId;
@@ -93,6 +87,7 @@ function AnnouncementPortal({
     const [error, setError] =
         useState("");
 
+
     const [isCreatePortalOpen, setIsCreatePortalOpen] =
         useState(false);
 
@@ -120,7 +115,6 @@ function AnnouncementPortal({
 
     const [showPortalMenu, setShowPortalMenu] =
         useState(false);
-
     const [showAddMember, setShowAddMember] =
         useState(false);
 
@@ -130,644 +124,341 @@ function AnnouncementPortal({
     const [addingMembers, setAddingMembers] =
         useState(false);
 
-
-    /*
-     * --------------------------------------------------
-     * Announcement RTC
-     * --------------------------------------------------
-     */
-
     const peerConnectionRef =
         useRef(null);
 
     const remoteUserRef =
         useRef(null);
 
-
-    /*
-     * --------------------------------------------------
-     * Screen Share
-     * --------------------------------------------------
-     */
-
     const [showScreenShare, setShowScreenShare] =
         useState(false);
 
 
-    /*
-     * --------------------------------------------------
-     * Convert portal members to NORMAL user IDs.
-     *
-     * ScreenShare accepts strings or user objects, but
-     * sending IDs directly is safest because announcement
-     * DB members have a different structure.
-     * --------------------------------------------------
-     */
 
-    const screenShareParticipantIds =
-        useMemo(() => {
+    const handleDeletePortal = async () => {
 
-            return portalMembers
-                .map(
-                    (member) => {
-
-                        if (
-                            typeof member ===
-                            "string"
-                        ) {
-                            return member;
-                        }
-
-                        return (
-                            member?.userId ??
-                            member?.user_id ??
-                            member?.id
-                        );
-
-                    }
-                )
-                .filter(Boolean);
-
-        }, [
-            portalMembers,
-        ]);
-
-
-    /*
-     * --------------------------------------------------
-     * Announcement users
-     * --------------------------------------------------
-     */
-
-    const announcementUsers =
-        useMemo(() => {
-
-            const memberIds =
-                portalMembers
-                    .map(
-                        (member) =>
-                            member?.userId
-                    )
-                    .filter(Boolean);
-
-            return users.filter(
-                (user) =>
-                    memberIds.includes(
-                        user.userId
-                    )
-            );
-
-        }, [
-            portalMembers,
-            users,
-        ]);
-
-
-    /*
-     * --------------------------------------------------
-     * Available Portal Members
-     * --------------------------------------------------
-     */
-
-    const availablePortalMembers =
-        useMemo(() => {
-
-            const existingMemberIds =
-                portalMembers
-                    .map(
-                        (member) =>
-                            member?.userId
-                    )
-                    .filter(Boolean);
-
-            return users.filter(
-                (user) =>
-                    user.userId &&
-                    user.userId !==
-                    userId &&
-                    !existingMemberIds.includes(
-                        user.userId
-                    )
-            );
-
-        }, [
-            users,
-            portalMembers,
-            userId,
-        ]);
-
-
-    /*
-     * --------------------------------------------------
-     * SCREEN SHARE START / STOP LISTENER
-     *
-     * Portal ID is being used as conversationId.
-     *
-     * Receiver must open ScreenShare BEFORE it can receive
-     * the screen offer.
-     * --------------------------------------------------
-     */
-
-    useEffect(() => {
-
-        if (
-            !selectedPortal?._id ||
-            !userId
-        ) {
+        if (!selectedPortal) {
             return;
         }
 
-
-        const socket =
-            getSocket();
-
-
-        const portalConversationId =
-            selectedPortal._id.toString();
-
-
-        const handleScreenShareStarted =
-            ({
-                conversationId,
-                userId: senderUserId,
-            }) => {
-
-                if (
-                    conversationId?.toString() !==
-                    portalConversationId
-                ) {
-                    return;
-                }
-
-
-                if (
-                    senderUserId?.toString() ===
-                    userId?.toString()
-                ) {
-                    return;
-                }
-
-
-                console.log(
-                    "Announcement remote screen share started:",
-                    {
-                        conversationId,
-                        senderUserId,
-                    }
-                );
-
-
-                /*
-                 * IMPORTANT:
-                 * Mount ScreenShare on receiver so that its
-                 * offer / answer / ICE listeners become active.
-                 */
-
-                setShowScreenShare(
-                    true
-                );
-            };
-
-
-        const handleScreenShareStopped =
-            ({
-                conversationId,
-                userId: senderUserId,
-            }) => {
-
-                if (
-                    conversationId?.toString() !==
-                    portalConversationId
-                ) {
-                    return;
-                }
-
-
-                if (
-                    senderUserId?.toString() ===
-                    userId?.toString()
-                ) {
-                    return;
-                }
-
-
-                console.log(
-                    "Announcement remote screen share stopped:",
-                    {
-                        conversationId,
-                        senderUserId,
-                    }
-                );
-
-
-                /*
-                 * Do NOT set showScreenShare(false) here.
-                 *
-                 * ScreenShare itself handles the stopped event
-                 * and removes only the remote stream.
-                 *
-                 * Keeping it mounted ensures receiver remains
-                 * ready for future screen shares.
-                 */
-            };
-
-
-        socket.on(
-            "screenShare:started",
-            handleScreenShareStarted
+        const confirmed = window.confirm(
+            `Are you sure you want to delete "${selectedPortal.name}"?`
         );
 
-        socket.on(
-            "screenShare:stopped",
-            handleScreenShareStopped
+        if (!confirmed) {
+            return;
+        }
+
+        try {
+
+            setError("");
+
+            await deleteAnnouncementPortal(
+                selectedPortal._id,
+                userId,
+                platformId
+            );
+
+            /*
+            * Remove deleted portal from local list
+            */
+            setPortals((prev) =>
+                prev.filter(
+                    (portal) =>
+                        portal._id !== selectedPortal._id
+                )
+            );
+
+            /*
+            * Clear selected portal
+            */
+            setSelectedPortal(null);
+
+            /*
+            * Clear announcements and members
+            */
+            setAnnouncements([]);
+            setPortalMembers([]);
+
+        } catch (error) {
+
+            console.error(
+                "Delete portal error:",
+                error
+            );
+
+            setError(
+                error?.response?.data?.message ||
+                "Failed to delete announcement portal"
+            );
+        }
+    };
+
+    const handleRoleChange = async (
+        memberUserId,
+        newRole
+    ) => {
+
+        if (!selectedPortal) {
+            return;
+        }
+
+        if (selectedPortal.role !== "host") {
+            return;
+        }
+
+        if (memberUserId === userId) {
+            return;
+        }
+
+        try {
+
+            setError("");
+
+            await updatePortalMemberRole(
+                selectedPortal._id,
+                memberUserId,
+                userId,
+                newRole,
+                platformId
+            );
+
+            const updatedMembers =
+                await getAnnouncementPortalMembers(
+                    selectedPortal._id,
+                    userId,
+                    platformId
+                );
+
+            setPortalMembers(updatedMembers);
+
+        } catch (error) {
+
+            console.error(
+                "Update member role error:",
+                error.response?.data || error
+            );
+
+            setError(
+                error.response?.data?.message ||
+                "Failed to update member role"
+            );
+        }
+    };
+
+    /*
+     * --------------------------------------------------
+     * Portal members available for announcements
+     * --------------------------------------------------
+     */
+
+    const announcementUsers = useMemo(() => {
+
+        if (!selectedPortal?.members) {
+            return [];
+        }
+
+        const memberIds =
+            selectedPortal.members.map(
+                (member) => member.userId
+            );
+
+        return users.filter(
+            (user) =>
+                memberIds.includes(
+                    user.userId
+                )
         );
-
-
-        return () => {
-
-            socket.off(
-                "screenShare:started",
-                handleScreenShareStarted
-            );
-
-            socket.off(
-                "screenShare:stopped",
-                handleScreenShareStopped
-            );
-
-        };
 
     }, [
-        selectedPortal?._id,
+        selectedPortal,
+        users,
+    ]);
+
+
+    const availablePortalMembers = useMemo(() => {
+
+        const existingMemberIds =
+            portalMembers.map(
+                (member) => member.userId
+            );
+
+        return users.filter(
+            (user) =>
+                user.userId &&
+                user.userId !== userId &&
+                !existingMemberIds.includes(
+                    user.userId
+                )
+        );
+
+    }, [
+        users,
+        portalMembers,
         userId,
     ]);
 
 
     /*
      * --------------------------------------------------
-     * Toggle Screen Share UI
-     *
-     * ScreenShare component itself sends:
-     *
-     * screenShare:started
-     * screenShare:stopped
-     *
-     * when user actually clicks the share button.
+     * Edit announcement
      * --------------------------------------------------
      */
 
-    const handleToggleScreenShare =
-        () => {
+    const handleEditAnnouncement = (
+        announcement
+    ) => {
 
-            setShowScreenShare(
-                (prev) =>
-                    !prev
-            );
-        };
-
-
-    /*
-     * --------------------------------------------------
-     * Delete Portal
-     * --------------------------------------------------
-     */
-
-    const handleDeletePortal =
-        async () => {
-
-            if (
-                !selectedPortal
-            ) {
-                return;
-            }
-
-
-            const confirmed =
-                window.confirm(
-                    `Are you sure you want to delete "${selectedPortal.name}"?`
-                );
-
-
-            if (
-                !confirmed
-            ) {
-                return;
-            }
-
-
-            try {
-
-                setError("");
-
-                await deleteAnnouncementPortal(
-                    selectedPortal._id,
-                    userId
-                );
-
-
-                setPortals(
-                    (prev) =>
-                        prev.filter(
-                            (portal) =>
-                                portal._id !==
-                                selectedPortal._id
-                        )
-                );
-
-
-                setSelectedPortal(
-                    null
-                );
-
-                setAnnouncements(
-                    []
-                );
-
-                setPortalMembers(
-                    []
-                );
-
-                setShowScreenShare(
-                    false
-                );
-
-            } catch (error) {
-
-                console.error(
-                    "Delete portal error:",
-                    error
-                );
-
-                setError(
-                    error?.response?.data?.message ||
-                    "Failed to delete announcement portal"
-                );
-            }
-        };
-
-
-    /*
-     * --------------------------------------------------
-     * Change Member Role
-     * --------------------------------------------------
-     */
-
-    const handleRoleChange =
-        async (
-            memberUserId,
-            newRole
-        ) => {
-
-            if (
-                !selectedPortal
-            ) {
-                return;
-            }
-
-
-            if (
-                selectedPortal.role !==
-                "host"
-            ) {
-                return;
-            }
-
-
-            if (
-                memberUserId ===
-                userId
-            ) {
-                return;
-            }
-
-
-            try {
-
-                setError("");
-
-                await updatePortalMemberRole(
-                    selectedPortal._id,
-                    memberUserId,
-                    userId,
-                    newRole
-                );
-
-
-                const updatedMembers =
-                    await getAnnouncementPortalMembers(
-                        selectedPortal._id,
-                        userId
-                    );
-
-
-                setPortalMembers(
-                    updatedMembers
-                );
-
-            } catch (error) {
-
-                console.error(
-                    "Update member role error:",
-                    error.response?.data ||
-                    error
-                );
-
-                setError(
-                    error.response?.data?.message ||
-                    "Failed to update member role"
-                );
-            }
-        };
-
-
-    /*
-     * --------------------------------------------------
-     * Edit Announcement
-     * --------------------------------------------------
-     */
-
-    const handleEditAnnouncement =
-        (
+        setEditingAnnouncement(
             announcement
-        ) => {
+        );
+    };
 
-            setEditingAnnouncement(
-                announcement
+
+    const handleUpdateAnnouncement = async ({
+        title,
+        content,
+    }) => {
+
+        if (
+            !selectedPortal ||
+            !editingAnnouncement
+        ) {
+            return;
+        }
+
+        try {
+
+            setError("");
+
+            const updatedAnnouncement =
+                await updateAnnouncement(
+                    selectedPortal._id,
+                    editingAnnouncement._id,
+                    {
+                        userId,
+                        title,
+                        content,
+                    },
+                    platformId
+                );
+
+            setAnnouncements((prev) =>
+                prev.map(
+                    (announcement) =>
+                        announcement._id ===
+                        updatedAnnouncement._id
+                            ? updatedAnnouncement
+                            : announcement
+                )
             );
-        };
 
+            setEditingAnnouncement(null);
 
-    const handleUpdateAnnouncement =
-        async ({
-            title,
-            content,
-        }) => {
+        } catch (error) {
 
-            if (
-                !selectedPortal ||
-                !editingAnnouncement
-            ) {
-                return;
-            }
+            console.error(
+                "Failed to update announcement:",
+                error
+            );
 
-
-            try {
-
-                setError("");
-
-                const updatedAnnouncement =
-                    await updateAnnouncement(
-                        selectedPortal._id,
-                        editingAnnouncement._id,
-                        {
-                            userId,
-                            title,
-                            content,
-                        }
-                    );
-
-
-                setAnnouncements(
-                    (prev) =>
-                        prev.map(
-                            (announcement) =>
-                                announcement._id ===
-                                updatedAnnouncement._id
-                                    ? updatedAnnouncement
-                                    : announcement
-                        )
-                );
-
-
-                setEditingAnnouncement(
-                    null
-                );
-
-            } catch (error) {
-
-                console.error(
-                    "Failed to update announcement:",
-                    error
-                );
-
-                setError(
-                    error?.response?.data?.message ||
-                    "Failed to update announcement"
-                );
-            }
-        };
+            setError(
+                error?.response?.data?.message ||
+                "Failed to update announcement"
+            );
+        }
+    };
 
 
     /*
      * --------------------------------------------------
-     * Load Portals
+     * Load portals
      * --------------------------------------------------
      */
 
-    const loadPortals =
-        async () => {
+    const loadPortals = async () => {
 
-            if (
-                !userId
-            ) {
-                return;
-            }
+        if (!userId) {
+            return;
+        }
 
+        try {
 
-            try {
+            setLoadingPortals(true);
+            setError("");
 
-                setLoadingPortals(
-                    true
+            const data =
+                await getUserAnnouncementPortals(
+                    userId,
+                    platformId
                 );
 
-                setError(
-                    ""
-                );
+            console.log(
+                "Announcement portals:",
+                data
+            );
+
+            setPortals(data);
 
 
-                const data =
-                    await getUserAnnouncementPortals(
-                        userId
-                    );
+            /*
+             * Keep currently selected portal
+             * if it still exists.
+             */
 
+            setSelectedPortal(
+                (currentSelected) => {
 
-                console.log(
-                    "Announcement portals:",
-                    data
-                );
-
-
-                setPortals(
-                    data
-                );
-
-
-                setSelectedPortal(
-                    (
-                        currentSelected
-                    ) => {
-
-                        if (
-                            !data.length
-                        ) {
-                            return null;
-                        }
-
-
-                        if (
-                            !currentSelected
-                        ) {
-                            return null;
-                        }
-
-
-                        const updatedPortal =
-                            data.find(
-                                (portal) =>
-                                    portal._id ===
-                                    currentSelected._id
-                            );
-
-
-                        return (
-                            updatedPortal ||
-                            null
-                        );
+                    if (!data.length) {
+                        return null;
                     }
-                );
 
-            } catch (error) {
+                    if (!currentSelected) {
+                        return null;
+                    }
 
-                console.error(
-                    "Failed to load announcement portals:",
-                    error
-                );
+                    const updatedPortal =
+                        data.find(
+                            (portal) =>
+                                portal._id ===
+                                currentSelected._id
+                        );
 
-                setError(
-                    error?.response?.data?.message ||
-                    "Failed to load announcement portals"
-                );
+                    return (
+                        updatedPortal ||
+                        null
+                    );
+                }
+            );
 
-            } finally {
+        } catch (error) {
 
-                setLoadingPortals(
-                    false
-                );
-            }
-        };
+            console.error(
+                "Failed to load announcement portals:",
+                error
+            );
 
+            setError(
+                error?.response?.data?.message ||
+                "Failed to load announcement portals"
+            );
+
+        } finally {
+
+            setLoadingPortals(false);
+
+        }
+    };
 
     /*
-     * --------------------------------------------------
-     * Portal Socket Updates
-     * --------------------------------------------------
-     */
+    * --------------------------------------------------
+    * Announcement portal socket updates
+    * --------------------------------------------------
+    */
 
     useEffect(() => {
 
-        if (
-            !userId
-        ) {
+        if (!userId) {
             return;
         }
 
@@ -776,25 +467,37 @@ function AnnouncementPortal({
             getSocket();
 
 
-        const handlePortalCreated =
-            () => {
+        const handlePortalCreated = () => {
 
-                loadPortals();
-            };
+            console.log(
+                "Announcement portal created - refreshing portals"
+            );
 
+            loadPortals();
 
-        const handlePortalDeleted =
-            () => {
-
-                loadPortals();
-            };
+        };
 
 
-        const handlePortalMemberChanged =
-            () => {
+        const handlePortalDeleted = () => {
 
-                loadPortals();
-            };
+            console.log(
+                "Announcement portal deleted - refreshing portals"
+            );
+
+            loadPortals();
+
+        };
+
+
+        const handlePortalMemberChanged = () => {
+
+            console.log(
+                "Announcement portal membership changed - refreshing portals"
+            );
+
+            loadPortals();
+
+        };
 
 
         socket.on(
@@ -852,93 +555,57 @@ function AnnouncementPortal({
 
         };
 
-    }, [
-        userId,
-    ]);
-
-
+    }, [userId]);
     /*
      * --------------------------------------------------
-     * Load Portal Members
+     * Load portal members
      * --------------------------------------------------
      */
 
     useEffect(() => {
 
-        setShowMembers(
-            false
-        );
-
-        setShowPortalMenu(
-            false
-        );
-
-        setShowAddMember(
-            false
-        );
-
-        setSelectedNewMembers(
-            []
-        );
-
-        setShowScreenShare(
-            false
-        );
-
+        setShowMembers(false);
+        setShowPortalMenu(false);
+        setShowAddMember(false);
+        setSelectedNewMembers([]);
 
         if (
             !selectedPortal?._id ||
             !currentUser?.userId
         ) {
-
-            setPortalMembers(
-                []
-            );
-
+            setPortalMembers([]);
             return;
         }
 
+        const loadPortalMembers = async () => {
 
-        const loadPortalMembers =
-            async () => {
+            try {
 
-                try {
+                setMembersLoading(true);
 
-                    setMembersLoading(
-                        true
+                const members =
+                    await getAnnouncementPortalMembers(
+                        selectedPortal._id,
+                        currentUser.userId
                     );
 
+                setPortalMembers(members);
 
-                    const members =
-                        await getAnnouncementPortalMembers(
-                            selectedPortal._id,
-                            currentUser.userId
-                        );
+            } catch (error) {
 
+                console.error(
+                    "Failed to load portal members:",
+                    error
+                );
 
-                    setPortalMembers(
-                        members
-                    );
+                setPortalMembers([]);
 
-                } catch (error) {
+            } finally {
 
-                    console.error(
-                        "Failed to load portal members:",
-                        error
-                    );
+                setMembersLoading(false);
 
-                    setPortalMembers(
-                        []
-                    );
-
-                } finally {
-
-                    setMembersLoading(
-                        false
-                    );
-                }
-            };
-
+            }
+        };
 
         loadPortalMembers();
 
@@ -950,7 +617,7 @@ function AnnouncementPortal({
 
     /*
      * --------------------------------------------------
-     * Initial Portal Load
+     * Initial portal load
      * --------------------------------------------------
      */
 
@@ -958,14 +625,12 @@ function AnnouncementPortal({
 
         loadPortals();
 
-    }, [
-        userId,
-    ]);
+    }, [userId]);
 
 
     /*
      * --------------------------------------------------
-     * Load Announcements
+     * Load announcements when portal changes
      * --------------------------------------------------
      */
 
@@ -976,59 +641,55 @@ function AnnouncementPortal({
             !userId
         ) {
 
-            setAnnouncements(
-                []
-            );
+            setAnnouncements([]);
 
             return;
         }
 
+        const loadAnnouncements = async () => {
 
-        const loadAnnouncements =
-            async () => {
+            try {
 
-                try {
+                setLoadingAnnouncements(true);
+                setError("");
 
-                    setLoadingAnnouncements(
-                        true
+                const data =
+                    await getAnnouncements(
+                        selectedPortal._id,
+                        userId,
+                        platformId
                     );
 
-                    setError(
-                        ""
-                    );
+                setAnnouncements(data);
 
+            } catch (error) {
 
-                    const data =
-                        await getAnnouncements(
-                            selectedPortal._id,
-                            userId
-                        );
+                console.error(
+                    "Failed to load announcements:",
+                    error
+                );
 
+                console.error(
+                    "Status:",
+                    error?.response?.status
+                );
 
-                    setAnnouncements(
-                        data
-                    );
+                console.error(
+                    "Backend response:",
+                    error?.response?.data
+                );
 
-                } catch (error) {
+                setError(
+                    error?.response?.data?.message ||
+                    "Failed to load announcements"
+                );
 
-                    console.error(
-                        "Failed to load announcements:",
-                        error
-                    );
+            } finally {
 
-                    setError(
-                        error?.response?.data?.message ||
-                        "Failed to load announcements"
-                    );
+                setLoadingAnnouncements(false);
 
-                } finally {
-
-                    setLoadingAnnouncements(
-                        false
-                    );
-                }
-            };
-
+            }
+        };
 
         loadAnnouncements();
 
@@ -1036,13 +697,13 @@ function AnnouncementPortal({
         selectedPortal,
         userId,
     ]);
-
+    
 
     /*
-     * --------------------------------------------------
-     * Announcement WebRTC Connection
-     * --------------------------------------------------
-     */
+    * --------------------------------------------------
+    * Announcement WebRTC connection
+    * --------------------------------------------------
+    */
 
     useEffect(() => {
 
@@ -1053,7 +714,6 @@ function AnnouncementPortal({
             return;
         }
 
-
         const socket =
             getSocket();
 
@@ -1061,218 +721,228 @@ function AnnouncementPortal({
             selectedPortal._id;
 
 
-        const createPeerConnection =
-            (
-                remoteUserId
-            ) => {
+        const createPeerConnection = (
+            remoteUserId
+        ) => {
 
-                if (
-                    peerConnectionRef.current
-                ) {
-                    return peerConnectionRef.current;
-                }
+            if (
+                peerConnectionRef.current
+            ) {
+                return peerConnectionRef.current;
+            }
 
-
-                remoteUserRef.current =
-                    remoteUserId;
+            remoteUserRef.current =
+                remoteUserId;
 
 
-                const peerConnection =
-                    new RTCPeerConnection({
-                        iceServers: [
-                            {
-                                urls:
-                                    "stun:stun.l.google.com:19302",
-                            },
-                        ],
-                    });
+            const peerConnection =
+                new RTCPeerConnection({
+                    iceServers: [
+                        {
+                            urls:
+                                "stun:stun.l.google.com:19302",
+                        },
+                    ],
+                });
 
 
-                peerConnection.onicecandidate =
-                    (
-                        event
-                    ) => {
+            peerConnection.onicecandidate =
+                (event) => {
 
-                        if (
-                            !event.candidate
-                        ) {
-                            return;
-                        }
+                    if (
+                        !event.candidate
+                    ) {
+                        return;
+                    }
 
-
-                        sendAnnouncementIceCandidate(
-                            portalId,
-                            userId,
-                            event.candidate
-                        );
-                    };
+                    sendAnnouncementIceCandidate(
+                        portalId,
+                        userId,
+                        event.candidate
+                    );
+                };
 
 
-                peerConnection.onconnectionstatechange =
-                    () => {
+            peerConnection.onconnectionstatechange =
+                () => {
 
-                        console.log(
-                            "Announcement WebRTC state:",
-                            peerConnection.connectionState
-                        );
-                    };
+                    console.log(
+                        "Announcement WebRTC state:",
+                        peerConnection.connectionState
+                    );
 
+                };
+
+
+            peerConnectionRef.current =
+                peerConnection;
+
+            return peerConnection;
+        };
+
+
+        /*
+        * Someone joined the portal.
+        * We become the caller.
+        */
+
+        const handleUserJoined = async (
+            data
+        ) => {
+
+            console.log(
+                "Announcement RTC user joined:",
+                data
+            );
+
+            const peerConnection =
+                createPeerConnection(
+                    data.userId
+                );
+
+            const offer =
+                await peerConnection.createOffer();
+
+            await peerConnection.setLocalDescription(
+                offer
+            );
+
+            sendAnnouncementOffer(
+                portalId,
+                userId,
+                offer
+            );
+        };
+
+
+        /*
+        * Receive offer.
+        * We become the answerer.
+        */
+
+        const handleOffer = async (
+            data
+        ) => {
+
+            console.log(
+                "Announcement RTC offer received:",
+                data
+            );
+
+            const peerConnection =
+                createPeerConnection(
+                    data.userId
+                );
+
+            await peerConnection.setRemoteDescription(
+                new RTCSessionDescription(
+                    data.offer
+                )
+            );
+
+            const answer =
+                await peerConnection.createAnswer();
+
+            await peerConnection.setLocalDescription(
+                answer
+            );
+
+            sendAnnouncementAnswer(
+                portalId,
+                userId,
+                answer
+            );
+        };
+
+
+        /*
+        * Receive answer.
+        */
+
+        const handleAnswer = async (
+            data
+        ) => {
+
+            console.log(
+                "Announcement RTC answer received:",
+                data
+            );
+
+            const peerConnection =
+                peerConnectionRef.current;
+
+            if (!peerConnection) {
+                return;
+            }
+
+            await peerConnection.setRemoteDescription(
+                new RTCSessionDescription(
+                    data.answer
+                )
+            );
+        };
+
+
+        /*
+        * Receive ICE candidate.
+        */
+
+        const handleIceCandidate = async (
+            data
+        ) => {
+
+            const peerConnection =
+                peerConnectionRef.current;
+
+            if (
+                !peerConnection ||
+                !data.candidate
+            ) {
+                return;
+            }
+
+            try {
+
+                await peerConnection.addIceCandidate(
+                    new RTCIceCandidate(
+                        data.candidate
+                    )
+                );
+
+            } catch (error) {
+
+                console.error(
+                    "Failed to add ICE candidate:",
+                    error
+                );
+
+            }
+        };
+
+
+        const handleUserLeft = (
+            data
+        ) => {
+
+            console.log(
+                "Announcement RTC user left:",
+                data
+            );
+
+            if (
+                peerConnectionRef.current
+            ) {
+
+                peerConnectionRef.current.close();
 
                 peerConnectionRef.current =
-                    peerConnection;
-
-
-                return peerConnection;
-            };
-
-
-        const handleUserJoined =
-            async (
-                data
-            ) => {
-
-                const peerConnection =
-                    createPeerConnection(
-                        data.userId
-                    );
-
-
-                const offer =
-                    await peerConnection.createOffer();
-
-
-                await peerConnection.setLocalDescription(
-                    offer
-                );
-
-
-                sendAnnouncementOffer(
-                    portalId,
-                    userId,
-                    offer
-                );
-            };
-
-
-        const handleOffer =
-            async (
-                data
-            ) => {
-
-                const peerConnection =
-                    createPeerConnection(
-                        data.userId
-                    );
-
-
-                await peerConnection.setRemoteDescription(
-                    new RTCSessionDescription(
-                        data.offer
-                    )
-                );
-
-
-                const answer =
-                    await peerConnection.createAnswer();
-
-
-                await peerConnection.setLocalDescription(
-                    answer
-                );
-
-
-                sendAnnouncementAnswer(
-                    portalId,
-                    userId,
-                    answer
-                );
-            };
-
-
-        const handleAnswer =
-            async (
-                data
-            ) => {
-
-                const peerConnection =
-                    peerConnectionRef.current;
-
-
-                if (
-                    !peerConnection
-                ) {
-                    return;
-                }
-
-
-                await peerConnection.setRemoteDescription(
-                    new RTCSessionDescription(
-                        data.answer
-                    )
-                );
-            };
-
-
-        const handleIceCandidate =
-            async (
-                data
-            ) => {
-
-                const peerConnection =
-                    peerConnectionRef.current;
-
-
-                if (
-                    !peerConnection ||
-                    !data.candidate
-                ) {
-                    return;
-                }
-
-
-                try {
-
-                    await peerConnection.addIceCandidate(
-                        new RTCIceCandidate(
-                            data.candidate
-                        )
-                    );
-
-                } catch (error) {
-
-                    console.error(
-                        "Failed to add ICE candidate:",
-                        error
-                    );
-                }
-            };
-
-
-        const handleUserLeft =
-            (
-                data
-            ) => {
-
-                console.log(
-                    "Announcement RTC user left:",
-                    data
-                );
-
-
-                if (
-                    peerConnectionRef.current
-                ) {
-
-                    peerConnectionRef.current.close();
-
-                    peerConnectionRef.current =
-                        null;
-                }
-
-
-                remoteUserRef.current =
                     null;
-            };
+
+            }
+
+            remoteUserRef.current =
+                null;
+        };
 
 
         socket.on(
@@ -1314,7 +984,6 @@ function AnnouncementPortal({
                 userId
             );
 
-
             socket.off(
                 "announcement:userJoined",
                 handleUserJoined
@@ -1349,8 +1018,8 @@ function AnnouncementPortal({
 
                 peerConnectionRef.current =
                     null;
-            }
 
+            }
 
             remoteUserRef.current =
                 null;
@@ -1365,466 +1034,461 @@ function AnnouncementPortal({
 
     /*
      * --------------------------------------------------
-     * Create Portal
+     * Create portal
      * --------------------------------------------------
      */
 
-    const handleCreatePortal =
-        async ({
-            name,
-            description,
-            targetAudience,
-            members,
-        }) => {
+    const handleCreatePortal = async ({
+        name,
+        description,
+        targetAudience,
+        members,
+    }) => {
 
-            try {
+        try {
 
-                setError("");
+            setError("");
 
+            const createdPortal =
+                await createAnnouncementPortal({
 
-                const createdPortal =
-                    await createAnnouncementPortal({
-                        name,
-                        description,
-                        userId,
-                        role: userRole,
-                        targetAudience,
-                        members,
-                    });
+                    name,
 
+                    description,
 
-                await loadPortals();
+                    userId,
 
+                    role: userRole,
 
-                setSelectedPortal(
-                    createdPortal
-                );
+                    targetAudience,
+
+                    members,
+                    platformId,
+
+                });
 
 
-                setIsCreatePortalOpen(
-                    false
-                );
+            /*
+             * Refresh portal list.
+             */
 
-            } catch (error) {
+            await loadPortals();
 
-                console.error(
-                    "Failed to create portal:",
-                    error
-                );
 
-                setError(
-                    error?.response?.data?.message ||
-                    "Failed to create announcement portal"
-                );
+            /*
+             * Select newly created portal.
+             */
 
-                throw error;
-            }
-        };
+            setSelectedPortal(
+                createdPortal
+            );
+
+            setIsCreatePortalOpen(
+                false
+            );
+
+        } catch (error) {
+
+            console.error(
+                "Failed to create portal:",
+                error
+            );
+
+            setError(
+                error?.response?.data?.message ||
+                "Failed to create announcement portal"
+            );
+
+            throw error;
+        }
+    };
 
 
     /*
      * --------------------------------------------------
-     * Create Announcement
+     * Create announcement
      * --------------------------------------------------
      */
 
-    const handleCreateAnnouncement =
-        async ({
-            title,
-            content,
-            targetAudience,
-            targetUserIds,
-            files = [],
-        }) => {
+    const handleCreateAnnouncement = async ({
+        title,
+        content,
+        targetAudience,
+        targetUserIds,
+        files = [],
+    }) => {
+
+        if (!selectedPortal) {
+            return;
+        }
+
+        try {
+
+            setError("");
+
+            const formData =
+                new FormData();
+
+
+            formData.append(
+                "senderId",
+                userId
+            );
+
+            formData.append(
+                "title",
+                title
+            );
+
+            formData.append(
+                "content",
+                content
+            );
+
+            formData.append(
+                "targetAudience",
+                targetAudience
+            );
+
+
+            /*
+             * Selected users
+             */
 
             if (
-                !selectedPortal
+                targetAudience === "selected" &&
+                Array.isArray(targetUserIds)
             ) {
-                return;
-            }
 
+                targetUserIds
+                    .filter(Boolean)
+                    .forEach(
+                        (targetUserId) => {
 
-            try {
-
-                setError("");
-
-
-                const formData =
-                    new FormData();
-
-
-                formData.append(
-                    "senderId",
-                    userId
-                );
-
-                formData.append(
-                    "title",
-                    title
-                );
-
-                formData.append(
-                    "content",
-                    content
-                );
-
-                formData.append(
-                    "targetAudience",
-                    targetAudience
-                );
-
-
-                if (
-                    targetAudience ===
-                    "selected" &&
-                    Array.isArray(
-                        targetUserIds
-                    )
-                ) {
-
-                    targetUserIds
-                        .filter(Boolean)
-                        .forEach(
-                            (
+                            formData.append(
+                                "targetUserIds",
                                 targetUserId
-                            ) => {
+                            );
 
-                                formData.append(
-                                    "targetUserIds",
-                                    targetUserId
-                                );
-                            }
-                        );
-                }
+                        }
+                    );
+            }
 
 
-                files.forEach(
-                    (
+            /*
+             * Attachments
+             */
+
+            files.forEach(
+                (file) => {
+
+                    formData.append(
+                        "attachments",
                         file
-                    ) => {
+                    );
 
-                        formData.append(
-                            "attachments",
-                            file
-                        );
-                    }
-                );
+                }
+            );
 
 
-                const announcement =
-                    await createAnnouncement(
+            console.log(
+                "Creating announcement:",
+                {
+                    portalId:
                         selectedPortal._id,
-                        formData
-                    );
+
+                    targetAudience,
+
+                    targetUserIds,
+                }
+            );
 
 
-                setAnnouncements(
-                    (
-                        prev
-                    ) => [
-                        announcement,
-                        ...prev,
-                    ]
-                );
-
-
-                setIsCreateAnnouncementOpen(
-                    false
-                );
-
-            } catch (error) {
-
-                console.error(
-                    "Failed to create announcement:",
-                    error
-                );
-
-                setError(
-                    error?.response?.data?.message ||
-                    "Failed to create announcement"
-                );
-
-                throw error;
-            }
-        };
-
-
-    /*
-     * --------------------------------------------------
-     * Delete Announcement
-     * --------------------------------------------------
-     */
-
-    const handleDeleteAnnouncement =
-        async (
-            announcementId
-        ) => {
-
-            if (
-                !selectedPortal
-            ) {
-                return;
-            }
-
-
-            try {
-
-                setError("");
-
-
-                await deleteAnnouncement(
+            const announcement =
+                await createAnnouncement(
                     selectedPortal._id,
-                    announcementId,
-                    userId
+                    formData,
+                    platformId
                 );
 
 
-                setAnnouncements(
-                    (
-                        prev
-                    ) =>
-                        prev.filter(
-                            (
-                                announcement
-                            ) =>
-                                announcement._id !==
-                                announcementId
-                        )
-                );
+            setAnnouncements(
+                (prev) => [
+                    announcement,
+                    ...prev,
+                ]
+            );
 
-            } catch (error) {
+            setIsCreateAnnouncementOpen(
+                false
+            );
 
-                console.error(
-                    "Failed to delete announcement:",
-                    error
-                );
+        } catch (error) {
 
-                setError(
-                    error?.response?.data?.message ||
-                    "Failed to delete announcement"
-                );
-            }
-        };
+            console.error(
+                "Failed to create announcement:",
+                error
+            );
+
+            console.error(
+                "Status:",
+                error?.response?.status
+            );
+
+            console.error(
+                "Backend response:",
+                error?.response?.data
+            );
+
+            setError(
+                error?.response?.data?.message ||
+                "Failed to create announcement"
+            );
+
+            throw error;
+        }
+    };
 
 
     /*
      * --------------------------------------------------
-     * Add Portal Members
+     * Delete announcement
      * --------------------------------------------------
      */
 
-    const handleAddPortalMembers =
-        async () => {
+    const handleDeleteAnnouncement = async (
+        announcementId
+    ) => {
 
-            if (
-                !selectedPortal ||
-                selectedNewMembers.length ===
-                0
-            ) {
-                return;
-            }
+        if (!selectedPortal) {
+            return;
+        }
 
+        try {
 
-            if (
-                selectedPortal.role !==
-                "host"
-            ) {
-                return;
-            }
+            setError("");
 
+            await deleteAnnouncement(
+                selectedPortal._id,
+                announcementId,
+                userId,
+                platformId
+            );
 
-            try {
+            setAnnouncements(
+                (prev) =>
+                    prev.filter(
+                        (announcement) =>
+                            announcement._id !==
+                            announcementId
+                    )
+            );
 
-                setAddingMembers(
-                    true
-                );
+        } catch (error) {
 
-                setError(
-                    ""
-                );
+            console.error(
+                "Failed to delete announcement:",
+                error
+            );
 
+            setError(
+                error?.response?.data?.message ||
+                "Failed to delete announcement"
+            );
+        }
+    };
 
-                const membersToAdd =
-                    selectedNewMembers.map(
-                        (
-                            selectedUserId
-                        ) => ({
-                            userId:
-                                selectedUserId,
-                            role:
-                                "participant",
-                        })
-                    );
+    /*
+    * --------------------------------------------------
+    * Add portal members
+    * --------------------------------------------------
+    */
 
+    const handleAddPortalMembers = async () => {
 
-                await addPortalMembers(
+        if (
+            !selectedPortal ||
+            selectedNewMembers.length === 0
+        ) {
+            return;
+        }
+
+        if (selectedPortal.role !== "host") {
+            return;
+        }
+
+        try {
+
+            setAddingMembers(true);
+            setError("");
+
+            const membersToAdd =
+                selectedNewMembers.map((userId) => ({
+                    userId,
+                    role: "participant",
+                }));
+
+            await addPortalMembers(
+                selectedPortal._id,
+                membersToAdd,
+                userId,
+                platformId
+            );
+
+            const members =
+                await getAnnouncementPortalMembers(
                     selectedPortal._id,
-                    membersToAdd,
-                    userId
+                    userId,
+                    platformId
                 );
 
+            setPortalMembers(members);
 
-                const members =
-                    await getAnnouncementPortalMembers(
-                        selectedPortal._id,
-                        userId
-                    );
+            await loadPortals();
 
+            setSelectedNewMembers([]);
+            setShowAddMember(false);
 
-                setPortalMembers(
-                    members
-                );
+        } catch (error) {
 
+            console.error(
+                "Add portal members error:",
+                error.response?.data || error
+            );
 
-                await loadPortals();
+            setError(
+                error.response?.data?.message ||
+                "Failed to add members"
+            );
 
+        } finally {
 
-                setSelectedNewMembers(
-                    []
-                );
+            setAddingMembers(false);
 
-                setShowAddMember(
-                    false
-                );
+        }
+    };
 
-            } catch (error) {
-
-                console.error(
-                    "Add portal members error:",
-                    error.response?.data ||
-                    error
-                );
-
-                setError(
-                    error.response?.data?.message ||
-                    "Failed to add members"
-                );
-
-            } finally {
-
-                setAddingMembers(
-                    false
-                );
-            }
-        };
 
 
     /*
      * --------------------------------------------------
-     * Remove Portal Member
+     * Remove portal member
      * --------------------------------------------------
      */
 
-    const handleRemovePortalMember =
-        async (
-            member
-        ) => {
+    const handleRemovePortalMember = async (
+        member
+    ) => {
 
-            if (
-                !selectedPortal
-            ) {
-                return;
-            }
+        if (!selectedPortal) {
+            return;
+        }
 
 
-            if (
-                selectedPortal.role !==
-                "host"
-            ) {
-                return;
-            }
+        /*
+         * Only host can remove members.
+         */
+
+        if (selectedPortal.role !== "host") {
+            return;
+        }
 
 
-            if (
-                member.userId ===
-                selectedPortal.createdBy
-            ) {
-                return;
-            }
+        /*
+         * Host cannot remove themselves.
+         */
+
+        if (
+            member.userId ===
+            selectedPortal.createdBy
+        ) {
+            return;
+        }
 
 
-            const memberUser =
-                users.find(
-                    (
-                        user
-                    ) =>
-                        user.userId ===
-                        member.userId
-                );
+        const memberUser =
+            users.find(
+                (user) =>
+                    user.userId === member.userId
+            );
+
+        const displayName =
+            memberUser?.displayName ||
+            member.userId;
+
+        const confirmed =
+            window.confirm(
+                `Are you sure you want to remove ${displayName} from this portal?`
+            );
 
 
-            const displayName =
-                memberUser?.displayName ||
-                member.userId;
+        if (!confirmed) {
+            return;
+        }
 
 
-            const confirmed =
-                window.confirm(
-                    `Are you sure you want to remove ${displayName} from this portal?`
-                );
+        try {
+
+            setError("");
 
 
-            if (
-                !confirmed
-            ) {
-                return;
-            }
+            await removePortalMember(
+                selectedPortal._id,
+                member.userId,
+                userId,
+                platformId
+            );
 
 
-            try {
+            /*
+             * Immediately update member list.
+             */
 
-                setError("");
-
-
-                await removePortalMember(
-                    selectedPortal._id,
-                    member.userId,
-                    userId
-                );
-
-
-                setPortalMembers(
-                    (
-                        prev
-                    ) =>
-                        prev.filter(
-                            (
-                                existingMember
-                            ) =>
-                                existingMember.userId !==
-                                member.userId
-                        )
-                );
+            setPortalMembers(
+                (prev) =>
+                    prev.filter(
+                        (existingMember) =>
+                            existingMember.userId !==
+                            member.userId
+                    )
+            );
 
 
-                await loadPortals();
+            /*
+             * Refresh portals so that
+             * access state stays accurate.
+             */
 
-            } catch (error) {
+            await loadPortals();
 
-                console.error(
-                    "Failed to remove portal member:",
-                    error
-                );
 
-                setError(
-                    error?.response?.data?.message ||
-                    "Failed to remove portal member"
-                );
-            }
-        };
+        } catch (error) {
+
+            console.error(
+                "Failed to remove portal member:",
+                error
+            );
+
+
+            setError(
+                error?.response?.data?.message ||
+                "Failed to remove portal member"
+            );
+
+        }
+    };
 
 
     /*
      * --------------------------------------------------
-     * No User
+     * No user
      * --------------------------------------------------
      */
 
-    if (
-        !userId
-    ) {
+    if (!userId) {
 
         return (
+
             <div className="announcement-portal">
 
                 <div className="announcement-empty">
@@ -1836,6 +1500,7 @@ function AnnouncementPortal({
                 </div>
 
             </div>
+
         );
     }
 
@@ -1846,11 +1511,10 @@ function AnnouncementPortal({
      * --------------------------------------------------
      */
 
-    if (
-        loadingPortals
-    ) {
+    if (loadingPortals) {
 
         return (
+
             <div className="announcement-portal">
 
                 <div className="announcement-loading">
@@ -1860,6 +1524,7 @@ function AnnouncementPortal({
                 </div>
 
             </div>
+
         );
     }
 
@@ -1902,6 +1567,8 @@ function AnnouncementPortal({
                 </div>
 
 
+                {/* Host/Admin can create portals */}
+
                 {(userRole === "admin" ||
                     userRole === "host") && (
 
@@ -1923,38 +1590,19 @@ function AnnouncementPortal({
 
 
             {/* =========================================
-                Portal Selector
+                Portal selector
             ========================================== */}
 
             <PortalList
                 portals={portals}
                 selectedPortal={selectedPortal}
                 onSelect={(portal) => {
-
-                    setSelectedPortal(
-                        portal
-                    );
-
-                    setShowScreenShare(
-                        false
-                    );
-
-                    setShowMembers(
-                        false
-                    );
-
-                    setShowPortalMenu(
-                        false
-                    );
-
-                    setShowAddMember(
-                        false
-                    );
-
-                    setSelectedNewMembers(
-                        []
-                    );
-
+                    setSelectedPortal(portal);
+                    setShowScreenShare(false);
+                    setShowMembers(false);
+                    setShowPortalMenu(false);
+                    setShowAddMember(false);
+                    setSelectedNewMembers([]);
                 }}
             />
 
@@ -1975,7 +1623,7 @@ function AnnouncementPortal({
 
 
             {/* =========================================
-                No Portals
+                No portals
             ========================================== */}
 
             {portals.length === 0 && (
@@ -1986,9 +1634,11 @@ function AnnouncementPortal({
                         📢
                     </div>
 
+
                     <h3>
                         No announcement portals
                     </h3>
+
 
                     <p>
                         You are not a member of any
@@ -2001,7 +1651,7 @@ function AnnouncementPortal({
 
 
             {/* =========================================
-                Selected Portal
+                Selected portal
             ========================================== */}
 
             {selectedPortal && (
@@ -2010,153 +1660,74 @@ function AnnouncementPortal({
 
                     <PortalHeader
                         portal={selectedPortal}
-
-                        memberCount={
-                            portalMembers.length
-                        }
-
-                        showMembers={
-                            showMembers
-                        }
-
-                        showPortalMenu={
-                            showPortalMenu
-                        }
-
+                        memberCount={portalMembers.length}
+                        showMembers={showMembers}
+                        showPortalMenu={showPortalMenu}
                         canManage={
-                            selectedPortal.role ===
-                            "host"
+                            selectedPortal.role === "host"
                         }
+                        showScreenShare={showScreenShare}
 
-                        showScreenShare={
-                            showScreenShare
+                        onToggleScreenShare={() =>
+                            setShowScreenShare(
+                                (prev) => !prev
+                            )
                         }
-
-                        onToggleScreenShare={
-                            handleToggleScreenShare
-                        }
-
                         onCreateAnnouncement={() =>
                             setIsCreateAnnouncementOpen(
                                 true
                             )
                         }
-
                         onToggleMenu={() =>
                             setShowPortalMenu(
-                                (prev) =>
-                                    !prev
+                                (prev) => !prev
                             )
                         }
-
                         onToggleMembers={() => {
-
                             setShowMembers(
-                                (prev) =>
-                                    !prev
+                                (prev) => !prev
                             );
 
-                            setShowPortalMenu(
-                                false
-                            );
-
+                            setShowPortalMenu(false);
                         }}
-
                         onAddMembers={() => {
-
-                            setShowAddMember(
-                                true
-                            );
-
-                            setShowMembers(
-                                true
-                            );
-
-                            setShowPortalMenu(
-                                false
-                            );
-
+                            setShowAddMember(true);
+                            setShowMembers(true);
+                            setShowPortalMenu(false);
                         }}
-
                         onDeletePortal={() => {
-
-                            setShowPortalMenu(
-                                false
-                            );
-
+                            setShowPortalMenu(false);
                             handleDeletePortal();
-
                         }}
 
-                        onClose={() => {
-
-                            setShowScreenShare(
-                                false
-                            );
-
-                            setSelectedPortal(
-                                null
-                            );
-
-                        }}
+                        onClose={() => setSelectedPortal(null)}
                     />
 
 
                     <PortalMembers
-                        members={
-                            portalMembers
-                        }
-
-                        users={
-                            users
-                        }
-
-                        currentUserId={
-                            userId
-                        }
-
-                        portal={
-                            selectedPortal
-                        }
-
-                        loading={
-                            membersLoading
-                        }
-
-                        show={
-                            showMembers
-                        }
-
-                        showAddMember={
-                            showAddMember
-                        }
-
+                        members={portalMembers}
+                        users={users}
+                        currentUserId={userId}
+                        portal={selectedPortal}
+                        loading={membersLoading}
+                        show={showMembers}
+                        showAddMember={showAddMember}
                         availableMembers={
                             availablePortalMembers
                         }
-
                         selectedNewMembers={
                             selectedNewMembers
                         }
-
-                        addingMembers={
-                            addingMembers
-                        }
-
+                        addingMembers={addingMembers}
                         onClose={() =>
-                            setShowMembers(
-                                false
-                            )
+                            setShowMembers(false)
                         }
-
                         onRoleChange={
                             handleRoleChange
                         }
-
                         onRemove={
                             handleRemovePortalMember
                         }
-
                         onToggleNewMember={(
                             memberUserId
                         ) => {
@@ -2178,96 +1749,43 @@ function AnnouncementPortal({
                             );
 
                         }}
-
                         onAddMembers={
                             handleAddPortalMembers
                         }
-
                         onCloseAddMember={() => {
-
-                            if (
-                                !addingMembers
-                            ) {
-
-                                setShowAddMember(
-                                    false
-                                );
-
-                                setSelectedNewMembers(
-                                    []
-                                );
-
+                            if (!addingMembers) {
+                                setShowAddMember(false);
+                                setSelectedNewMembers([]);
                             }
-
                         }}
                     />
 
-
-                    {/* =====================================
-                        Normal Announcement Space
-                    ====================================== */}
+                    {/* NORMAL ANNOUNCEMENT SPACE */}
 
                     {!showScreenShare && (
-
                         <PortalAnnouncements
-                            announcements={
-                                announcements
-                            }
-
-                            selectedPortal={
-                                selectedPortal
-                            }
-
-                            loading={
-                                loadingAnnouncements
-                            }
-
-                            onDelete={
-                                handleDeleteAnnouncement
-                            }
-
-                            onEdit={
-                                handleEditAnnouncement
-                            }
+                            announcements={announcements}
+                            selectedPortal={selectedPortal}
+                            loading={loadingAnnouncements}
+                            onDelete={handleDeleteAnnouncement}
+                            onEdit={handleEditAnnouncement}
                         />
-
                     )}
 
 
-                    {/* =====================================
-                        Screen Share Space
-                    ====================================== */}
+                    {/*  SCREEN SHARE SPACE */}
 
                     {showScreenShare && (
-
-                        <div
-                            className={
-                                showScreenShare
-                                    ? "rtc-screen-share-space visible"
-                                    : "rtc-screen-share-space"
-                            }
-                        >
+                        <div className="rtc-screen-share-space visible">
                             <ScreenShare
-                                conversationId={
-                                    selectedPortal._id
-                                }
-
-                                currentUser={
-                                    currentUser
-                                }
-
-                                participantIds={
-                                    screenShareParticipantIds
-                                }
-
-                                booleanConnection={
-                                    true
-                                }
+                                conversationId={selectedPortal._id}
+                                currentUser={currentUser}
+                                participantIds={portalMembers}
+                                booleanConnection={showScreenShare}
                             />
-
                         </div>
-
                     )}
+
 
                 </div>
 
@@ -2282,21 +1800,17 @@ function AnnouncementPortal({
                 isOpen={
                     isCreatePortalOpen
                 }
-
                 onClose={() =>
                     setIsCreatePortalOpen(
                         false
                     )
                 }
-
                 onCreate={
                     handleCreatePortal
                 }
-
                 users={
                     users
                 }
-
                 currentUser={
                     currentUser
                 }
@@ -2311,21 +1825,18 @@ function AnnouncementPortal({
                 isOpen={
                     isCreateAnnouncementOpen
                 }
-
                 onClose={() =>
                     setIsCreateAnnouncementOpen(
                         false
                     )
                 }
-
+                
                 onCreate={
                     handleCreateAnnouncement
                 }
-
                 users={
                     announcementUsers
                 }
-
                 currentUser={
                     currentUser
                 }
@@ -2344,17 +1855,14 @@ function AnnouncementPortal({
                             editingAnnouncement
                         )
                     }
-
                     announcement={
                         editingAnnouncement
                     }
-
                     onClose={() =>
                         setEditingAnnouncement(
                             null
                         )
                     }
-
                     onUpdate={
                         handleUpdateAnnouncement
                     }

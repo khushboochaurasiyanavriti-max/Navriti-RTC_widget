@@ -3,9 +3,20 @@ import { getServerUrl } from "./config";
 
 let socket = null;
 
+let activeUserId=null, activePlatformId=null;
+
+
 export function initializeSocket(
-    userId
+    userId,
+    platformId,
 ) {
+    if(!platformId) 
+        throw new Error(
+            "platformId is required"
+        );
+    activeUserId=userId||activeUserId; 
+    activePlatformId=platformId;
+ 
     if (!socket) {
         const serverUrl = getServerUrl();
 
@@ -41,20 +52,18 @@ export function initializeSocket(
             // timeout: 20000, 
         });
 
-        socket.on("connect", () => {
+        socket.on("connect", () => { 
             console.log(
                 "Socket connected:",
                 socket.id
             );
-
-            if (userId) {
-                socket.emit(
-                    "joinUser",
-                    userId
-                );
-            }
+            if(activeUserId&&activePlatformId) 
+                socket.emit("joinUser",{
+                    userId:activeUserId,
+                    platformId:activePlatformId
+                });
         });
-
+            
         socket.on("disconnect", (reason) => {
             console.log(
                 "Socket disconnected:",
@@ -69,6 +78,13 @@ export function initializeSocket(
             );
         });
     }
+    else if(socket.connected&&activeUserId) 
+        socket.emit("joinUser",{
+            userId:activeUserId,
+            platformId
+        });
+ 
+
 
     return socket;
 }
@@ -85,11 +101,15 @@ export function getSocket() {
 
 
 
+const platform=()=>activePlatformId;
+
 /* 
  * ---------------------------------------------------------
  * Join Announcement RTC room
  * ---------------------------------------------------------
  */
+
+
 
 export function joinAnnouncementRTC(
     portalId,
@@ -106,6 +126,7 @@ export function joinAnnouncementRTC(
         {
             portalId,
             userId,
+            platformId:platform(),
         }
     );
 }
@@ -132,6 +153,7 @@ export function leaveAnnouncementRTC(
         {
             portalId,
             userId,
+            platformId:platform(),
         }
     );
 }
@@ -150,6 +172,7 @@ export function sendAnnouncementOffer(
             portalId,
             userId,
             offer,
+            platformId:platform(),
         }
     );
 }
@@ -168,6 +191,7 @@ export function sendAnnouncementAnswer(
             portalId,
             userId,
             answer,
+            platformId:platform(),
         }
     );
 }
@@ -186,6 +210,7 @@ export function sendAnnouncementIceCandidate(
             portalId,
             userId,
             candidate,
+            platformId:platform(),
         }
     );
 }
@@ -205,6 +230,7 @@ export function sendScreenShareOffer(
             userId,
             targetUserId,
             offer,
+            platformId:platform(),
         }
     );
 }
@@ -223,6 +249,7 @@ export function sendScreenShareAnswer(
             userId,
             targetUserId,
             answer,
+            platformId:platform(),
         }
     );
 }
@@ -241,6 +268,7 @@ export function sendScreenShareIceCandidate(
             userId,
             targetUserId,
             candidate,
+            platformId:platform(),
         }
     );
 }
@@ -249,6 +277,7 @@ export function notifyScreenShareStarted(conversationId, userId) {
     getSocket().emit("screenShare:started", {
         conversationId,
         userId,
+        platformId:platform(),
     });
 }
 
@@ -256,5 +285,8 @@ export function notifyScreenShareStopped(conversationId, userId) {
     getSocket().emit("screenShare:stopped", {
         conversationId,
         userId,
+        platformId:platform(),
     });
 }
+
+export const getPlatformId=()=>activePlatformId;

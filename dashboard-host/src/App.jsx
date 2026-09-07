@@ -143,12 +143,14 @@ function App() {
         currentUser={currentUser}
         users={users}
         serverUrl="http://localhost:5000"
+          platformId="dashboard-platform"
         features={{
             chat: true,
             groupChat: true,
             announcements: true,
             screenShare: true,
         }}
+
       />
     </main>
   );

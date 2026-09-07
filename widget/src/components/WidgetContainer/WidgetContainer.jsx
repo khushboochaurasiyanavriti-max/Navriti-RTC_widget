@@ -75,6 +75,7 @@ function WidgetContainer({
     currentUser,
     users,
     serverUrl,
+    platformId,
     features,
     onClose,
     theme = "light",
@@ -267,7 +268,8 @@ function WidgetContainer({
 
                 const updatedConversations =
                     await getUserConversations(
-                        senderId
+                        senderId,
+                        platformId
                     );
 
 
@@ -1304,7 +1306,8 @@ function WidgetContainer({
 
                     const previousMessages =
                         await getMessages(
-                            selectedConversationId
+                            selectedConversationId,
+                            platformId
                         );
 
 
@@ -1578,14 +1581,16 @@ function WidgetContainer({
 
                 const session =
                     await createOrGetDirect(
-                        senderId,
-                        targetUserId
-                    );
+                    senderId,
+                    targetUserId,
+                    platformId
+                );
 
 
                 const updatedConversations =
                     await getUserConversations(
-                        senderId
+                        senderId,
+                        platformId
                     );
 
 
@@ -1664,15 +1669,17 @@ function WidgetContainer({
 
                 const newGroup =
                     await createGroup(
-                        groupName,
-                        senderId,
-                        participants
-                    );
+                    groupName,
+                    senderId,
+                    participants,
+                    platformId
+                );
 
 
                 const updatedConversations =
                     await getUserConversations(
-                        senderId
+                        senderId,
+                        platformId
                     );
 
 
@@ -2044,6 +2051,8 @@ function WidgetContainer({
                             users
                         }
 
+                        platformId={platformId}
+
                         onBack={() => {
 
                             const activeConversationId =
@@ -2134,6 +2143,8 @@ function WidgetContainer({
                         users={
                             users
                         }
+
+                        platformId={platformId}
 
                         onBack={() =>
                             setActiveSection(

@@ -2,23 +2,30 @@ import { getApi } from "./api";
 
 export const createOrGetDirect = async (
   currentUserId,
-  targetUserId
+  targetUserId,
+  platformId,
 ) => {
   const api = getApi();
 
   const response = await api.post("/conversations/direct", {
     currentUserId,
     targetUserId,
+    platformId,
   });
 
   return response.data;
 };
 
-export const getUserConversations = async (userId) => {
+export const getUserConversations = async (userId,platformId) => {
   const api = getApi();
 
   const response = await api.get(
-    `/conversations/user/${userId}`
+    `/conversations/user/${userId}`,
+    {
+      params:{
+        platformId,
+      },
+    }
   );
 
   return response.data;
@@ -27,7 +34,8 @@ export const getUserConversations = async (userId) => {
 export const createGroup = async (
   groupName,
   currentUserId,
-  participants
+  participants,
+  platformId,
 ) => {
   const api = getApi();
 
@@ -35,6 +43,7 @@ export const createGroup = async (
     groupName,
     currentUserId,
     participants,
+    platformId,
   });
 
   return response.data;

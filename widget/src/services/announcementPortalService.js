@@ -9,7 +9,8 @@ import { getApi } from "./api";
  */
 
 export const getUserAnnouncementPortals = async (
-    userId
+    userId,
+    platformId,
 ) => {
 
     const api = getApi();
@@ -19,6 +20,7 @@ export const getUserAnnouncementPortals = async (
         {
             params: {
                 userId,
+                platformId,
             },
         }
     );
@@ -34,6 +36,7 @@ export const getUserAnnouncementPortals = async (
  */
 
 export const createAnnouncementPortal = async ({
+    platformId,
     name,
     description,
     userId,
@@ -47,6 +50,7 @@ export const createAnnouncementPortal = async ({
     const response = await api.post(
         "/announcement-portals",
         {
+            platformId,
             name,
             description,
             userId,
@@ -71,7 +75,8 @@ export const createAnnouncementPortal = async ({
 
 export const getAnnouncements = async (
     portalId,
-    userId
+    userId,
+    platformId,
 ) => {
 
     const api = getApi();
@@ -81,6 +86,7 @@ export const getAnnouncements = async (
         {
             params: {
                 userId,
+                platformId,
             },
         }
     );
@@ -98,7 +104,8 @@ export const getAnnouncements = async (
 export const getAnnouncement = async (
     portalId,
     announcementId,
-    userId
+    userId,
+    platformId,
 ) => {
 
     const api = getApi();
@@ -108,6 +115,7 @@ export const getAnnouncement = async (
         {
             params: {
                 userId,
+                platformId,
             },
         }
     );
@@ -124,18 +132,16 @@ export const getAnnouncement = async (
 
 export const createAnnouncement = async (
     portalId,
-    formData
-) => {
-
-    const api = getApi();
-
-    const response = await api.post(
-        `/announcement-portals/${portalId}/announcements`,
-        formData,
-        
-    );
-
-    return response.data.announcement;
+    formData,
+    platformId,
+) =>{
+    formData.append?.("platformId",platformId); 
+    if(!formData.append) 
+        formData={...formData,platformId}; 
+    return (
+        await getApi().post(
+            `/announcement-portals/${portalId}/announcements?platformId=${encodeURIComponent(platformId)}`,
+            formData)).data.announcement;
 };
 
 
@@ -148,14 +154,18 @@ export const createAnnouncement = async (
 export const updateAnnouncement = async (
     portalId,
     announcementId,
-    data
+    data,
+    platformId,
 ) => {
 
     const api = getApi();
 
     const response = await api.patch(
         `/announcement-portals/${portalId}/announcements/${announcementId}`,
-        data
+        {
+            ...data,
+            platformId,
+        }
     );
 
     return response.data.announcement;
@@ -171,7 +181,8 @@ export const updateAnnouncement = async (
 export const deleteAnnouncement = async (
     portalId,
     announcementId,
-    userId
+    userId,
+    platformId,
 ) => {
 
     const api = getApi();
@@ -181,6 +192,7 @@ export const deleteAnnouncement = async (
         {
             params: {
                 userId,
+                platformId,
             },
         }
     );
@@ -190,7 +202,8 @@ export const deleteAnnouncement = async (
 
 export const getAnnouncementPortalMembers = async (
     portalId,
-    userId
+    userId,
+    platformId,
 ) => {
 
     const api = getApi();
@@ -200,6 +213,7 @@ export const getAnnouncementPortalMembers = async (
         {
             params: {
                 userId,
+                platformId,
             },
         }
     );
@@ -216,7 +230,8 @@ export const getAnnouncementPortalMembers = async (
 export const addPortalMembers = async (
     portalId,
     members,
-    hostUserId
+    hostUserId,
+    platformId,
 ) => {
 
     const api = getApi();
@@ -226,6 +241,7 @@ export const addPortalMembers = async (
         {
             members,
             hostUserId,
+            platformId,
         }
     );
 
@@ -235,7 +251,8 @@ export const addPortalMembers = async (
 export const removePortalMember = async (
     portalId,
     userId,
-    hostUserId
+    hostUserId,
+    platformId,
 ) => {
     const api = getApi();
 
@@ -244,6 +261,7 @@ export const removePortalMember = async (
         {
             data: {
                 hostUserId,
+                platformId,
             },
         }
     );
@@ -256,7 +274,8 @@ export const updatePortalMemberRole = async (
     portalId,
     userId,
     hostUserId,
-    role
+    role,
+    platformId,
 ) => {
 
     const api = getApi();
@@ -266,6 +285,7 @@ export const updatePortalMemberRole = async (
         {
             hostUserId,
             role,
+            platformId,
         }
     );
 
@@ -273,7 +293,8 @@ export const updatePortalMemberRole = async (
 };
 export const deleteAnnouncementPortal = async (
     portalId,
-    userId
+    userId,
+    platformId,
 ) => {
 
     const api = getApi();
@@ -283,6 +304,7 @@ export const deleteAnnouncementPortal = async (
         {
             data: {
                 userId,
+                platformId,
             },
         }
     );

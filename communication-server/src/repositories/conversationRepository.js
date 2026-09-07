@@ -4,6 +4,10 @@ import crypto from "crypto";
 const generateConversationId = () => {
     return crypto.randomBytes(12).toString("hex");
 };
+const requirePlatformId = (platformId) => {
+    if (!platformId) throw new Error("platformId is required");
+};
+
 
 export const findByParticipantKey = async (participantKey) => {
     const query = `
@@ -26,7 +30,10 @@ export const createConversation = async ({
     type = "direct",
     displayName = null,
     participantKey = null,
+    platformId,
 }) => {
+    
+    requirePlatformId(platformId);
 
     const conversationId = generateConversationId();
     const now = new Date();
@@ -36,6 +43,7 @@ export const createConversation = async ({
             query: `
                 INSERT INTO conversations_by_id (
                     conversation_id,
+                    platformId,
                     type,
                     display_name,
                     participant_key,
@@ -46,6 +54,7 @@ export const createConversation = async ({
             `,
             params: [
                 conversationId,
+                platformId,
                 type,
                 displayName,
                 participantKey,
@@ -71,6 +80,7 @@ export const createConversation = async ({
             params: [
                 participantKey,
                 conversationId,
+                platformId,
                 type,
                 displayName,
                 now,
@@ -85,6 +95,7 @@ export const createConversation = async ({
 
     return {
         conversationId,
+        platformId,
         type,
         displayName,
         participantKey,
@@ -101,14 +112,22 @@ export const createConversation = async ({
 export const getOrCreateDirect = async ({
     currentUserId,
     targetUserId,
+    platformId,
 }) => {
+    requirePlatformId(platformId);
 
-    const participantKey = [
-        currentUserId,
-        targetUserId,
-    ]
-        .sort()
-        .join(":");
+    const userKey =
+        [
+            currentUserId,
+            targetUserId,
+        ]
+            .sort()
+            .join(":");
+
+
+    const participantKey =
+        `${platformId}:${userKey}`;
+        
 
     // 1. Check whether it already exists
     const existing = await findByParticipantKey(
@@ -133,6 +152,7 @@ export const getOrCreateDirect = async ({
             INSERT INTO conversations_by_participant_key (
                 participant_key,
                 conversation_id,
+                platformId,
                 type,
                 display_name,
                 created_at,
@@ -144,6 +164,7 @@ export const getOrCreateDirect = async ({
         [
             participantKey,
             conversationId,
+            platformId,
             "direct",
             null,
             now,
@@ -167,6 +188,7 @@ export const getOrCreateDirect = async ({
         `
             INSERT INTO conversations_by_id (
                 conversation_id,
+                platformId,
                 type,
                 display_name,
                 participant_key,
@@ -177,6 +199,7 @@ export const getOrCreateDirect = async ({
         `,
         [
             conversationId,
+            platformId,
             "direct",
             null,
             participantKey,
@@ -193,7 +216,7 @@ export const getOrCreateDirect = async ({
 };
 
 
-export const findById = async (conversationId) => {
+export const findById = async (conversationId,platformId) => {
     const query = `
         SELECT *
         FROM conversations_by_id
@@ -206,11 +229,31 @@ export const findById = async (conversationId) => {
         { prepare: true }
     );
 
-    return result.rows[0] || null;
+    const row = result.rows[0] || null;
+    if (!row) 
+        return null;
+    if (platformId && row.platform_id !== platformId) 
+        return null;
+    return row;
+};
+
+export const assertConversationPlatform = async (conversationId, platformId) => {
+    requirePlatformId(platformId);
+    const conversation = 
+        await findById(
+            conversationId, 
+            platformId,
+        );
+    if (!conversation) {
+        const error = new Error("Conversation does not belong to this platform");
+        error.statusCode = 404;
+        throw error;
+    }
+    return conversation;
 };
 
 
-export const findByIds = async (conversationIds) => {
+export const findByIds = async (conversationIds,platformId) => {
 
     if (!conversationIds.length) {
         return [];
@@ -218,7 +261,7 @@ export const findByIds = async (conversationIds) => {
 
     const results = await Promise.all(
         conversationIds.map((conversationId) =>
-            findById(conversationId)
+            findById(conversationId,platformId)
         )
     );
 
@@ -228,6 +271,7 @@ export const findByIds = async (conversationIds) => {
 
 export const createGroup = async ({
     displayName,
+    platformId,
 }) => {
     const conversationId = generateConversationId();
     const now = new Date();
@@ -236,6 +280,7 @@ export const createGroup = async ({
         `
         INSERT INTO conversations_by_id (
             conversation_id,
+            platformId,
             type,
             display_name,
             participant_key,
@@ -246,6 +291,7 @@ export const createGroup = async ({
         `,
         [
             conversationId,
+            platformId,
             "group",
             displayName,
             null,
@@ -257,6 +303,7 @@ export const createGroup = async ({
 
     return {
         conversationId,
+        platformId,
         type: "group",
         displayName,
         participantKey: null,

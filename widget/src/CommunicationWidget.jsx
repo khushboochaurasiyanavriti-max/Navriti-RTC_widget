@@ -10,6 +10,7 @@ function CommunicationWidget({
     currentUser,
     users,
     serverUrl,
+    platformId,
 
     //feature configuration
     features,
@@ -36,17 +37,17 @@ function CommunicationWidget({
     }, [theme]);
 
     useEffect(() => {
-        if (!serverUrl) {
+        if (!serverUrl || !platformId) {
             console.error(
-                "CommunicationWidget: serverUrl is required"
+                "CommunicationWidget: serverUrl and platformId are required"
             );
             return;
         }
 
         initializeConfig(serverUrl);
         initializeApi();
-        initializeSocket();
-    }, [serverUrl]);
+        initializeSocket(currentUser?.userId, platformId);
+    }, [serverUrl, platformId, currentUser?.userId]);
 
     const toggleWidget = () => {
         setOpen((prev) => !prev);
@@ -78,6 +79,7 @@ function CommunicationWidget({
                         currentUser={currentUser}
                         users={users}
                         serverUrl={serverUrl}
+                        platformId={platformId}
                         features={features}
                         onClose={closeWidget}
                         theme={theme}

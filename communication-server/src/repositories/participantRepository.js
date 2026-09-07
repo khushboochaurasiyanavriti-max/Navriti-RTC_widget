@@ -1,8 +1,15 @@
 import cassandra from "../config/cassandra.js";
 
+const requirePlatformId = (platformId) => { 
+    if (!platformId) 
+        throw new Error("platformId is required"); 
+};
+
+
 export const addParticipant = async ({
     userId,
     conversationId,
+    platformId,
     joinedAt = new Date(),
 }) => {
 
@@ -11,6 +18,7 @@ export const addParticipant = async ({
             {
                 query: `
                     INSERT INTO participants_by_user (
+                        platformId,
                         user_id,
                         conversation_id,
                         joined_at
@@ -18,6 +26,7 @@ export const addParticipant = async ({
                     VALUES (?, ?, ?)
                 `,
                 params: [
+                    platformId,
                     userId,
                     conversationId,
                     joinedAt,
@@ -26,6 +35,7 @@ export const addParticipant = async ({
             {
                 query: `
                     INSERT INTO participants_by_conversation (
+                        platformId,
                         conversation_id,
                         user_id,
                         joined_at
@@ -33,6 +43,7 @@ export const addParticipant = async ({
                     VALUES (?, ?, ?)
                 `,
                 params: [
+                    platformId,
                     conversationId,
                     userId,
                     joinedAt,
@@ -47,7 +58,9 @@ export const addParticipant = async ({
 export const addParticipants = async ({
     conversationId,
     userIds,
+    platformId,
 }) => {
+    requirePlatformId(platformId);
 
     const queries = [];
 
@@ -58,6 +71,7 @@ export const addParticipants = async ({
         queries.push({
             query: `
                 INSERT INTO participants_by_user (
+                    platformId,
                     user_id,
                     conversation_id,
                     joined_at
@@ -65,6 +79,7 @@ export const addParticipants = async ({
                 VALUES (?, ?, ?)
             `,
             params: [
+                platformId,
                 userId,
                 conversationId,
                 joinedAt,
@@ -74,6 +89,7 @@ export const addParticipants = async ({
         queries.push({
             query: `
                 INSERT INTO participants_by_conversation (
+                    platformId,
                     conversation_id,
                     user_id,
                     joined_at
@@ -81,6 +97,7 @@ export const addParticipants = async ({
                 VALUES (?, ?, ?)
             `,
             params: [
+                platformId,
                 conversationId,
                 userId,
                 joinedAt,
@@ -97,17 +114,17 @@ export const addParticipants = async ({
 };
 
 
-export const getByUserId = async (userId) => {
-
+export const getByUserId = async (userId,platformId) => {
+    requirePlatformId(platformId);
     const query = `
         SELECT user_id, conversation_id, joined_at
         FROM participants_by_user
-        WHERE user_id = ?
+        WHERE platform_id = ? AND  user_id = ?
     `;
 
     const result = await cassandra.execute(
         query,
-        [userId],
+        [platformId,userId],
         { prepare: true }
     );
 
@@ -116,18 +133,19 @@ export const getByUserId = async (userId) => {
 
 
 export const getByConversationId = async (
-    conversationId
+    conversationId,
+    platformId,
 ) => {
-
+    requirePlatformId(platformId);
     const query = `
         SELECT user_id, conversation_id, joined_at
         FROM participants_by_conversation
-        WHERE conversation_id = ?
+        WHERE platform_id = ? AND  conversation_id = ?
     `;
 
     const result = await cassandra.execute(
         query,
-        [conversationId],
+        [platformId,conversationId],
         { prepare: true }
     );
 
