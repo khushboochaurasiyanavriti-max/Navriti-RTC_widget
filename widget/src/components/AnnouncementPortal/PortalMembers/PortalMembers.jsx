@@ -86,8 +86,13 @@ function PortalMembers({
                             member.userId ===
                             portal.createdBy;
 
+                        const isHostOrAdmin =
+                            portal.role === "host" ||
+                            portal.role === "admin" ||
+                            portal.createdBy === currentUserId;
+
                         const canRemove =
-                            portal.role === "host" &&
+                            isHostOrAdmin &&
                             !isHost;
 
                         const memberUser =
@@ -102,7 +107,7 @@ function PortalMembers({
                             member.userId;
 
                         const canChangeRole =
-                            portal.role === "host" &&
+                            isHostOrAdmin &&
                             member.userId !==
                                 portal.createdBy &&
                             member.userId !==

@@ -12,9 +12,9 @@ import { getByConversationId } from "../repositories/participantRepository.js";
 import { assertConversationPlatform } from "../repositories/conversationRepository.js";
 
 
-const userRoom = (platformId, userId) => `platform:${platformId}:user:${userId}`;
-const conversationRoom = (platformId, conversationId) => `platform:${platformId}:conversation:${conversationId}`;
-const announcementRoom = (platformId, portalId) => `platform:${platformId}:announcement:${portalId}`;
+export const userRoom = (platformId, userId) => `platform:${platformId}:user:${userId}`;
+export const conversationRoom = (platformId, conversationId) => `platform:${platformId}:conversation:${conversationId}`;
+export const announcementRoom = (platformId, portalId) => `platform:${platformId}:announcement:${portalId}`;
 
 /*
  * =========================================================
@@ -29,7 +29,7 @@ const announcementRoom = (platformId, portalId) => `platform:${platformId}:annou
  * =========================================================
  */
 
-const notifyConversationParticipants = async (
+export const notifyConversationParticipants = async (
     io,
     conversationId,
     latestMessage,
@@ -195,6 +195,7 @@ const socketHandler = (io) => {
                     portalId,
                     userId,
                     offer,
+                    platformId,
                 }) => {
 
                     if (
@@ -229,6 +230,7 @@ const socketHandler = (io) => {
                     portalId,
                     userId,
                     answer,
+                    platformId,
                 }) => {
 
                     if (
@@ -263,6 +265,7 @@ const socketHandler = (io) => {
                     portalId,
                     userId,
                     candidate,
+                    platformId,
                 }) => {
 
                     if (
@@ -636,7 +639,8 @@ const socketHandler = (io) => {
             socket.on(
                 "joinConversation",
                 async ({ conversationId, platformId }) => {
-                    if (!conversationId || !platformId || socket.data.platformId !== platformId) return;
+                    if (!conversationId || !platformId) return;
+                    socket.data.platformId = platformId;
                     try {
                         await assertConversationPlatform(conversationId, platformId);
                         socket.join(conversationRoom(platformId, conversationId));
@@ -674,13 +678,17 @@ const socketHandler = (io) => {
                         }
 
 
-                        if (socket.data.platformId !== data.platformId) throw new Error("Platform mismatch");
+                        if (socket.data.platformId && socket.data.platformId !== data.platformId) throw new Error("Platform mismatch");
+                        socket.data.platformId = data.platformId;
                         await assertConversationPlatform(data.conversationId, data.platformId);
 
                         const message =
                             await createMessage({
                                 conversationId:
                                     data.conversationId,
+
+                                platformId:
+                                    data.platformId,
 
                                 senderId:
                                     data.senderId,
@@ -784,6 +792,9 @@ const socketHandler = (io) => {
                                 messageId:
                                     data.messageId,
 
+                                platformId:
+                                    data.platformId,
+
                                 senderId:
                                     data.senderId,
 
@@ -816,9 +827,10 @@ const socketHandler = (io) => {
                          */
 
                         const latestMessage =
-                            await getLatestMessage(
-                                message.conversationId
-                            );
+                            await getLatestMessage({
+                                conversationId: message.conversationId,
+                                platformId: data.platformId,
+                            });
 
 
                         /*
@@ -877,9 +889,12 @@ const socketHandler = (io) => {
                          */
 
                         const message =
-                            await findMessageById(
-                                data.messageId
-                            );
+                            await findMessageById({
+                                messageId:
+                                    data.messageId,
+                                platformId:
+                                    data.platformId,
+                            });
 
 
                         if (!message) {
@@ -967,6 +982,9 @@ const socketHandler = (io) => {
                                 messageId:
                                     data.messageId,
 
+                                platformId:
+                                    data.platformId,
+
                                 senderId:
                                     data.senderId,
                             });
@@ -988,8 +1006,7 @@ const socketHandler = (io) => {
                          */
 
                         io.to(
-                            deletedMessage
-                                .conversationId
+                            conversationRoom(data.platformId, deletedMessage.conversationId)
                         ).emit(
                             "messageDeleted",
                             deletedMessage
@@ -1002,10 +1019,10 @@ const socketHandler = (io) => {
                          */
 
                         const latestMessage =
-                            await getLatestMessage(
-                                deletedMessage
-                                    .conversationId
-                            );
+                            await getLatestMessage({
+                                conversationId: deletedMessage.conversationId,
+                                platformId: data.platformId,
+                            });
 
 
                         /*
@@ -1016,7 +1033,8 @@ const socketHandler = (io) => {
                             io,
                             deletedMessage
                                 .conversationId,
-                            latestMessage
+                            latestMessage,
+                            data.platformId
                         );
 
 
@@ -1044,20 +1062,20 @@ const socketHandler = (io) => {
 
             socket.on(
                 "leaveConversation",
-                (conversationId) => {
+                ({ conversationId, platformId }) => {
 
-                    if (!conversationId) {
+                    if (!conversationId || !platformId) {
                         return;
                     }
 
 
                     socket.leave(
-                        conversationId
+                        conversationRoom(platformId, conversationId)
                     );
 
 
                     console.log(
-                        `user ${socket.id} left conversation: ${conversationId}`
+                        `user ${socket.id} left conversation: ${conversationRoom(platformId, conversationId)}`
                     );
 
                 }

@@ -13,7 +13,12 @@ import {
 import {
     getLatestMessage,
 } from "../repositories/messageRepository.js";
+import { notifyConversationParticipants } from "../socket/socketHandler.js";
 
+let io = null;
+export const setConversationSocket = (socketIo) => {
+    io = socketIo;
+};
 
 const platformError = (res) => res.status(400).json({ message: "platformId is required" });
 
@@ -58,6 +63,15 @@ export const createOrGetDirect = async (req, res) => {
                 ],
                 platformId,
             });
+        }
+
+        if (io) {
+            await notifyConversationParticipants(
+                io,
+                conversationId,
+                null,
+                platformId
+            );
         }
 
         return res.status(
@@ -143,9 +157,10 @@ export const getUserConversations = async (req, res) => {
             }
 
             const lastMessage =
-                await getLatestMessage(
-                    conversation.conversation_id
-                );
+                await getLatestMessage({
+                    conversationId: conversation.conversation_id,
+                    platformId,
+                });
 
             response.push({
                 conversationId:
@@ -268,6 +283,15 @@ export const createGroup = async (req, res) => {
             userIds: allParticipants,
             platformId,
         });
+
+        if (io) {
+            await notifyConversationParticipants(
+                io,
+                conversation.conversationId,
+                null,
+                platformId
+            );
+        }
 
         // -----------------------------
         // Response

@@ -362,6 +362,7 @@ function WidgetContainer({
 
         }, [
             senderId,
+            platformId,
         ]);
     const delay = (milliseconds) =>
         new Promise(
@@ -488,6 +489,42 @@ function WidgetContainer({
                     newMessage.updatedAt ||
                     new Date().toISOString();
 
+
+                const msgSenderId = normalizeId(newMessage.senderId);
+                const myUserId = normalizeId(senderId);
+
+                if (msgSenderId !== myUserId && newMessage.content) {
+                    const isCurrentlyOpen =
+                        normalizeId(selectedConversationRef.current) ===
+                        newConversationId;
+
+                    if (!isCurrentlyOpen) {
+                        const currentUserName = currentUser?.displayName?.trim();
+                        const currentUserIdStr = currentUser?.userId?.toString()?.trim();
+
+                        const wasMentioned = [currentUserName, currentUserIdStr].some(
+                            (name) => {
+                                if (!name) return false;
+                                const escaped = name.replace(
+                                    /[.*+?^${}()|[\]\\]/g,
+                                    "\\$&"
+                                );
+                                return new RegExp(
+                                    `@${escaped}(?=\\s|$|[.,!?])`,
+                                    "i"
+                                ).test(newMessage.content);
+                            }
+                        );
+
+                        if (wasMentioned) {
+                            setMentionedConversations((prevMentions) => {
+                                const updatedMentions = new Set(prevMentions);
+                                updatedMentions.add(newConversationId);
+                                return updatedMentions;
+                            });
+                        }
+                    }
+                }
 
                 let conversationFound =
                     false;
@@ -1191,7 +1228,10 @@ function WidgetContainer({
 
                 socket.emit(
                     "leaveConversation",
-                    activeConversationId
+                    {
+                        conversationId: activeConversationId,
+                        platformId,
+                    }
                 );
 
             } catch (error) {
@@ -1266,7 +1306,10 @@ function WidgetContainer({
 
                         socket.emit(
                             "leaveConversation",
-                            previousConversationId
+                            {
+                                conversationId: previousConversationId,
+                                platformId,
+                            }
                         );
 
                     }
@@ -1286,7 +1329,10 @@ function WidgetContainer({
 
                     socket.emit(
                         "joinConversation",
-                        selectedConversationId
+                        {
+                            conversationId: selectedConversationId,
+                            platformId,
+                        }
                     );
 
 
@@ -1442,6 +1488,7 @@ function WidgetContainer({
                         {
                             conversationId,
                             senderId,
+                            platformId,
                             content: "",
                             messageType:
                                 fileData.messageType,
@@ -1492,6 +1539,7 @@ function WidgetContainer({
             {
                 conversationId,
                 senderId,
+                platformId,
                 content:
                     message.trim(),
                 messageType:
@@ -1780,6 +1828,7 @@ function WidgetContainer({
                 {
                     messageId,
                     senderId,
+                    platformId,
                     content:
                         content.trim(),
                 }
@@ -1818,6 +1867,7 @@ function WidgetContainer({
                 {
                     messageId,
                     senderId,
+                    platformId,
                 }
             );
 
@@ -2069,7 +2119,10 @@ function WidgetContainer({
 
                                     getSocket().emit(
                                         "leaveConversation",
-                                        activeConversationId
+                                        {
+                                            conversationId: activeConversationId,
+                                            platformId,
+                                        }
                                     );
 
                                 } catch (error) {

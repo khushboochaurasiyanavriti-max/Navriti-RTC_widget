@@ -78,10 +78,10 @@ export function initializeSocket(
             );
         });
     }
-    else if(socket.connected&&activeUserId) 
+    else if(socket.connected&&activeUserId&&activePlatformId) 
         socket.emit("joinUser",{
             userId:activeUserId,
-            platformId
+            platformId:activePlatformId
         });
  
 

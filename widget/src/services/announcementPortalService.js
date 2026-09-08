@@ -194,6 +194,10 @@ export const deleteAnnouncement = async (
                 userId,
                 platformId,
             },
+            data: {
+                userId,
+                platformId,
+            },
         }
     );
 
@@ -259,6 +263,10 @@ export const removePortalMember = async (
     const response = await api.delete(
         `/announcement-portals/${portalId}/members/${userId}`,
         {
+            params: {
+                hostUserId,
+                platformId,
+            },
             data: {
                 hostUserId,
                 platformId,
@@ -302,6 +310,10 @@ export const deleteAnnouncementPortal = async (
     const response = await api.delete(
         `/announcement-portals/${portalId}`,
         {
+            params: {
+                userId,
+                platformId,
+            },
             data: {
                 userId,
                 platformId,

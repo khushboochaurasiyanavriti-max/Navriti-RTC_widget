@@ -19,19 +19,21 @@ const getMessages = async (req, res) => {
 
             const messages = await getCassandraMessages({
                 conversationId,
+                platformId,
                 limit: Number(limit),
                 before: beforeDate,
             });
 
-            return res.status(200).json(messages);
+            return res.status(200).json(messages || []);
         }
 
         const messages = await getCassandraMessages({
             conversationId,
+            platformId,
             limit: Number(limit),
         });
 
-        return res.status(200).json(messages);
+        return res.status(200).json(messages || []);
 
     } catch (error) {
         console.error(

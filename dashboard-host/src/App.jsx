@@ -2,9 +2,10 @@ import "./App.css";
 import CommunicationWidget from "@rtc-widget/react";
 import "@rtc-widget/react/style.css";
 const currentUser = {
-  userId: "user-10",
-    displayName: "Rahul",
-    role: "user",
+  
+    userId: "user-1",
+    displayName: "Admin 1",
+    role: "admin",
   
 };
 
@@ -12,9 +13,10 @@ const users = [
   currentUser,
 
   {
-    userId: "user-1",
-    displayName: "Admin 1",
-    role: "admin",
+    userId: "user-10",
+    displayName: "Rahul",
+    role: "user",
+  
   },
 
   {
@@ -143,7 +145,7 @@ function App() {
         currentUser={currentUser}
         users={users}
         serverUrl="http://localhost:5000"
-          platformId="dashboard-platform"
+          platformId="platform-test1"
         features={{
             chat: true,
             groupChat: true,

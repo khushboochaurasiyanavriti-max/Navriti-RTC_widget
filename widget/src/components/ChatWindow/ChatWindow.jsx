@@ -17,6 +17,7 @@ function ChatWindow({
     selectedConversation,
     currentUser,
     users,
+    platformId,
     onBack,
     onEditMessage,
     onDeleteMessage,
@@ -241,6 +242,7 @@ function ChatWindow({
                         setMessage={setMessage}
                         sendMessage={sendMessage}
                         serverUrl={serverUrl}
+                        platformId={platformId}
                         users={users}
                         currentUser={currentUser}
                         selectedConversation={

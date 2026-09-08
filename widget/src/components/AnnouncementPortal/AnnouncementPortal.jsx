@@ -203,7 +203,12 @@ function AnnouncementPortal({
             return;
         }
 
-        if (selectedPortal.role !== "host") {
+        if (
+            selectedPortal.role !== "host" &&
+            selectedPortal.role !== "admin" &&
+            selectedPortal.createdBy !== userId &&
+            currentUser?.role !== "admin"
+        ) {
             return;
         }
 
@@ -478,11 +483,17 @@ function AnnouncementPortal({
         };
 
 
-        const handlePortalDeleted = () => {
+        const handlePortalDeleted = (data) => {
 
             console.log(
                 "Announcement portal deleted - refreshing portals"
             );
+
+            if (data?.portalId && selectedPortal?._id === data.portalId) {
+                setSelectedPortal(null);
+                setAnnouncements([]);
+                setPortalMembers([]);
+            }
 
             loadPortals();
 
@@ -496,6 +507,78 @@ function AnnouncementPortal({
             );
 
             loadPortals();
+
+        };
+
+
+        const handleAnnouncementCreated = (data) => {
+
+            console.log(
+                "Realtime announcement:created received:",
+                data
+            );
+
+            if (
+                selectedPortal?._id &&
+                data?.portalId === selectedPortal._id &&
+                data?.announcement
+            ) {
+                setAnnouncements((prev) => {
+                    const exists = prev.some(
+                        (a) => a._id === data.announcement._id
+                    );
+
+                    if (exists) return prev;
+
+                    return [data.announcement, ...prev];
+                });
+            }
+
+        };
+
+
+        const handleAnnouncementUpdated = (data) => {
+
+            console.log(
+                "Realtime announcement:updated received:",
+                data
+            );
+
+            if (
+                selectedPortal?._id &&
+                data?.portalId === selectedPortal._id &&
+                data?.announcement
+            ) {
+                setAnnouncements((prev) =>
+                    prev.map((a) =>
+                        a._id === data.announcement._id
+                            ? data.announcement
+                            : a
+                    )
+                );
+            }
+
+        };
+
+
+        const handleAnnouncementDeleted = (data) => {
+
+            console.log(
+                "Realtime announcement:deleted received:",
+                data
+            );
+
+            if (
+                selectedPortal?._id &&
+                data?.portalId === selectedPortal._id &&
+                data?.announcementId
+            ) {
+                setAnnouncements((prev) =>
+                    prev.filter(
+                        (a) => a._id !== data.announcementId
+                    )
+                );
+            }
 
         };
 
@@ -523,6 +606,21 @@ function AnnouncementPortal({
         socket.on(
             "announcement:member-role-updated",
             handlePortalMemberChanged
+        );
+
+        socket.on(
+            "announcement:created",
+            handleAnnouncementCreated
+        );
+
+        socket.on(
+            "announcement:updated",
+            handleAnnouncementUpdated
+        );
+
+        socket.on(
+            "announcement:deleted",
+            handleAnnouncementDeleted
         );
 
 
@@ -553,9 +651,24 @@ function AnnouncementPortal({
                 handlePortalMemberChanged
             );
 
+            socket.off(
+                "announcement:created",
+                handleAnnouncementCreated
+            );
+
+            socket.off(
+                "announcement:updated",
+                handleAnnouncementUpdated
+            );
+
+            socket.off(
+                "announcement:deleted",
+                handleAnnouncementDeleted
+            );
+
         };
 
-    }, [userId]);
+    }, [userId, selectedPortal?._id]);
     /*
      * --------------------------------------------------
      * Load portal members
@@ -586,7 +699,8 @@ function AnnouncementPortal({
                 const members =
                     await getAnnouncementPortalMembers(
                         selectedPortal._id,
-                        currentUser.userId
+                        currentUser.userId,
+                        platformId
                     );
 
                 setPortalMembers(members);
@@ -1313,7 +1427,12 @@ function AnnouncementPortal({
             return;
         }
 
-        if (selectedPortal.role !== "host") {
+        if (
+            selectedPortal.role !== "host" &&
+            selectedPortal.role !== "admin" &&
+            selectedPortal.createdBy !== userId &&
+            currentUser?.role !== "admin"
+        ) {
             return;
         }
 
@@ -1386,10 +1505,15 @@ function AnnouncementPortal({
 
 
         /*
-         * Only host can remove members.
+         * Only host/admin can remove members.
          */
 
-        if (selectedPortal.role !== "host") {
+        if (
+            selectedPortal.role !== "host" &&
+            selectedPortal.role !== "admin" &&
+            selectedPortal.createdBy !== userId &&
+            currentUser?.role !== "admin"
+        ) {
             return;
         }
 

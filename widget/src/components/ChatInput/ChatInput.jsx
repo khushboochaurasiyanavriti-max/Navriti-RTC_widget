@@ -33,6 +33,7 @@ function ChatInput({
     currentUser,
     selectedConversation,
     serverUrl,
+    platformId,
 }) {
     const [showMentions, setShowMentions] =
         useState(false);
@@ -110,6 +111,7 @@ function ChatInput({
             const formData = new FormData();
 
             formData.append("file", file);
+            formData.append("platformId", platformId);
 
             const response = await fetch(
                 `${serverUrl}/api/files/upload`,
@@ -173,6 +175,8 @@ function ChatInput({
 
                             resourceType:
                                 attachment.resourceType,
+
+                            platformId,
                         }),
                     }
                 ).catch((cleanupError) => {

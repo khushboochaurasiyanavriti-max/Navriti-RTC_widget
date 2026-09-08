@@ -1,5 +1,6 @@
 import cloudinary from "../config/cloudinary.js";
 import crypto from "crypto";
+import { userRoom, announcementRoom } from "../socket/socketHandler.js";
 
 import {
     createPortal,
@@ -107,6 +108,7 @@ const createAnnouncementPortal = async (req, res) => {
 
         const membership = await addMember({
             portalId,
+            platformId,
             userId,
             role: "host",
             addedBy: userId,
@@ -126,6 +128,7 @@ const createAnnouncementPortal = async (req, res) => {
                 )
                 .map((member) => ({
                     portalId,
+                    platformId,
                     userId: member.userId,
                     role: "participant",
                     addedBy: userId,
@@ -152,11 +155,12 @@ const createAnnouncementPortal = async (req, res) => {
 
             memberIds.forEach((memberId) => {
                 io.to(
-                    `user:${memberId}`
+                    userRoom(platformId, memberId)
                 ).emit(
                     "announcement:portal-created",
                     {
                         portalId,
+                        portal,
                     }
                 );
             });
@@ -195,10 +199,9 @@ const createAnnouncementPortal = async (req, res) => {
 const addPortalMembers = async (req, res) => {
     try {
         const { portalId } = req.params;
-        const {
-            hostUserId,
-            members,
-        } = req.body;
+        const hostUserId = req.body?.hostUserId || req.query?.hostUserId;
+        const { members } = req.body || {};
+        const platformId = req.platformId || req.body?.platformId || req.query?.platformId;
 
         if (!hostUserId) {
             return res.status(400).json({
@@ -217,26 +220,30 @@ const addPortalMembers = async (req, res) => {
             });
         }
 
+        const portal = req.portal || await getPortalById(portalId, platformId);
         const host = await getMember({
             portalId,
             userId: hostUserId,
+            platformId,
         });
 
-        if (
-            !host ||
-            host.role !== "host"
-        ) {
+        const isHostOrAdmin =
+            (host && (host.role === "host" || host.role === "admin")) ||
+            portal?.createdBy === hostUserId;
+
+        if (!isHostOrAdmin) {
             return res.status(403).json({
                 message:
-                    "Only the host can add members",
+                    "Only host or admin can add members",
             });
         }
 
         const newMembers =
             members.map((member) => ({
                 portalId,
+                platformId,
                 userId: member.userId,
-                role: member.role,
+                role: member.role || "participant",
                 addedBy: hostUserId,
             }));
 
@@ -246,10 +253,11 @@ const addPortalMembers = async (req, res) => {
             );
 
         if (io) {
+            const platformIdVal = platformId || host?.platformId || portal?.platformId;
             createdMembers.forEach(
                 (member) => {
                     io.to(
-                        `user:${member.userId}`
+                        userRoom(platformIdVal || member.platformId, member.userId)
                     ).emit(
                         "announcement:member-added",
                         {
@@ -261,16 +269,18 @@ const addPortalMembers = async (req, res) => {
                 }
             );
 
-            io.to(
-                `user:${hostUserId}`
-            ).emit(
-                "announcement:member-added",
-                {
-                    portalId,
-                    userId:
-                        hostUserId,
-                }
-            );
+            if (hostUserId) {
+                io.to(
+                    userRoom(platformIdVal || host?.platformId, hostUserId)
+                ).emit(
+                    "announcement:member-added",
+                    {
+                        portalId,
+                        userId:
+                            hostUserId,
+                    }
+                );
+            }
         }
 
         return res.status(201).json({
@@ -359,6 +369,10 @@ const createAnnouncement = async (
                 )
             ),
         ];
+
+        if (req.body?.senderId && !targetUserIds.includes(req.body.senderId)) {
+            targetUserIds.push(req.body.senderId);
+        }
 
 
         /* -----------------------------------------
@@ -464,14 +478,9 @@ const createAnnouncement = async (
                 );
 
 
-            // Only participants can be selected
-            const selectedParticipantIds =
+            // Any member of the portal (host, admin, participant) can be selected
+            const validMemberUserIds =
                 selectedMembers
-                    .filter(
-                        (member) =>
-                            member.role ===
-                            "participant"
-                    )
                     .map(
                         (member) =>
                             member.userId
@@ -480,9 +489,9 @@ const createAnnouncement = async (
 
             const invalidUserIds =
                 targetUserIds.filter(
-                    (userId) =>
-                        !selectedParticipantIds.includes(
-                            userId
+                    (uId) =>
+                        !validMemberUserIds.includes(
+                            uId
                         )
                 );
 
@@ -493,7 +502,7 @@ const createAnnouncement = async (
             ) {
                 return res.status(400).json({
                     message:
-                        "Some selected users are not participants of this portal",
+                        "Some selected users are not members of this portal",
                     invalidUserIds,
                 });
             }
@@ -588,11 +597,16 @@ const createAnnouncement = async (
             ).toString("hex");
 
 
+        const portal = await getPortalById(portalId);
+        const platformId = req.body?.platformId || req.query?.platformId || portal?.platformId;
+
         const announcement =
             await createAnnouncementCassandra({
                 announcementId,
 
                 portalId,
+
+                platformId,
 
                 senderId,
 
@@ -619,6 +633,30 @@ const createAnnouncement = async (
                     expiresAt || null,
             });
 
+
+        if (io) {
+            try {
+                const members = await getMembersByPortal(portalId);
+                members.forEach((member) => {
+                    io.to(userRoom(platformId, member.userId)).emit(
+                        "announcement:created",
+                        {
+                            portalId,
+                            announcement,
+                        }
+                    );
+                });
+                io.to(announcementRoom(platformId, portalId)).emit(
+                    "announcement:created",
+                    {
+                        portalId,
+                        announcement,
+                    }
+                );
+            } catch (err) {
+                console.error("Socket emit error on createAnnouncement:", err.message);
+            }
+        }
 
         return res.status(201).json({
             message:
@@ -720,6 +758,7 @@ const getAnnouncements = async (
 
 
                     const visibleToUser =
+                        announcement.senderId === userId ||
                         announcement
                             .targetAudience ===
                             "all" ||
@@ -792,6 +831,8 @@ const updateAnnouncement = async (
             expiresAt,
         } = req.body;
 
+        const platformId = req.platformId || req.body?.platformId || req.query?.platformId;
+
         if (!userId) {
             return res.status(400).json({
                 message:
@@ -803,6 +844,7 @@ const updateAnnouncement = async (
             await getMember({
                 portalId,
                 userId,
+                platformId,
             });
 
         if (!member) {
@@ -824,7 +866,8 @@ const updateAnnouncement = async (
 
         const announcement =
             await getAnnouncementById(
-                announcementId
+                announcementId,
+                platformId
             );
 
         if (
@@ -841,8 +884,8 @@ const updateAnnouncement = async (
         const updated =
             await updateAnnouncementCassandra({
                 announcementId,
-
                 portalId,
+                platformId,
 
                 title:
                     title !== undefined
@@ -861,6 +904,31 @@ const updateAnnouncement = async (
                         ? expiresAt || null
                         : undefined,
             });
+
+        if (io) {
+            try {
+                const platformIdVal = platformId || announcement.platformId;
+                const members = await getMembersByPortal(portalId, platformIdVal);
+                members.forEach((member) => {
+                    io.to(userRoom(platformIdVal, member.userId)).emit(
+                        "announcement:updated",
+                        {
+                            portalId,
+                            announcement: updated,
+                        }
+                    );
+                });
+                io.to(announcementRoom(platformIdVal, portalId)).emit(
+                    "announcement:updated",
+                    {
+                        portalId,
+                        announcement: updated,
+                    }
+                );
+            } catch (err) {
+                console.error("Socket emit error on updateAnnouncement:", err.message);
+            }
+        }
 
         return res.status(200).json({
             message:
@@ -902,9 +970,10 @@ const deleteAnnouncement = async (
             announcementId,
         } = req.params;
 
-        const {
-            userId,
-        } = req.query;
+        const userId =
+            req.query?.userId || req.body?.userId;
+
+        const platformId = req.platformId || req.query?.platformId || req.body?.platformId;
 
         if (!userId) {
             return res.status(400).json({
@@ -916,7 +985,8 @@ const deleteAnnouncement = async (
 
         const announcement =
             await getAnnouncementById(
-                announcementId
+                announcementId,
+                platformId
             );
 
         if (
@@ -935,6 +1005,7 @@ const deleteAnnouncement = async (
             await getMember({
                 portalId,
                 userId,
+                platformId,
             });
 
         if (!membership) {
@@ -1011,8 +1082,33 @@ const deleteAnnouncement = async (
         await deleteAnnouncementCassandra({
             announcementId,
             portalId,
+            platformId,
         });
 
+        if (io) {
+            try {
+                const platformIdVal = platformId || announcement.platformId;
+                const members = await getMembersByPortal(portalId, platformIdVal);
+                members.forEach((member) => {
+                    io.to(userRoom(platformIdVal, member.userId)).emit(
+                        "announcement:deleted",
+                        {
+                            portalId,
+                            announcementId,
+                        }
+                    );
+                });
+                io.to(announcementRoom(platformIdVal, portalId)).emit(
+                    "announcement:deleted",
+                    {
+                        portalId,
+                        announcementId,
+                    }
+                );
+            } catch (err) {
+                console.error("Socket emit error on deleteAnnouncement:", err.message);
+            }
+        }
 
         return res.status(200).json({
             message:
@@ -1335,6 +1431,10 @@ const getPortalMembers = async (
    REMOVE PORTAL MEMBER
 ===================================================== */
 
+/* =====================================================
+   REMOVE PORTAL MEMBER
+===================================================== */
+
 const removePortalMember = async (
     req,
     res
@@ -1345,9 +1445,10 @@ const removePortalMember = async (
             userId,
         } = req.params;
 
-        const {
-            hostUserId,
-        } = req.body;
+        const hostUserId =
+            req.body?.hostUserId || req.query?.hostUserId;
+
+        const platformId = req.platformId || req.body?.platformId || req.query?.platformId;
 
         if (!hostUserId) {
             return res.status(400).json({
@@ -1357,9 +1458,11 @@ const removePortalMember = async (
         }
 
         const portal =
-            await getPortalById(
-                portalId
-            );
+            req.portal ||
+            (await getPortalById(
+                portalId,
+                platformId
+            ));
 
         if (!portal) {
             return res.status(404).json({
@@ -1368,13 +1471,23 @@ const removePortalMember = async (
             });
         }
 
-        if (
-            portal.createdBy !==
-            hostUserId
-        ) {
+        const requester =
+            await getMember({
+                portalId,
+                userId: hostUserId,
+                platformId,
+            });
+
+        const isHostOrAdmin =
+            (requester &&
+                (requester.role === "host" ||
+                    requester.role === "admin")) ||
+            portal.createdBy === hostUserId;
+
+        if (!isHostOrAdmin) {
             return res.status(403).json({
                 message:
-                    "Only the host can remove members",
+                    "Only host or admin can remove members",
             });
         }
 
@@ -1392,6 +1505,7 @@ const removePortalMember = async (
             await getMember({
                 portalId,
                 userId,
+                platformId,
             });
 
         if (!member) {
@@ -1404,29 +1518,34 @@ const removePortalMember = async (
         await removeMember({
             portalId,
             userId,
+            platformId,
         });
 
         if (io) {
+            const platformIdVal = platformId || portal?.platformId || member?.platformId;
+            if (userId) {
+                io.to(
+                    userRoom(platformIdVal, userId)
+                ).emit(
+                    "announcement:member-removed",
+                    {
+                        portalId,
+                        userId,
+                    }
+                );
+            }
 
-            io.to(
-                `user:${userId}`
-            ).emit(
-                "announcement:member-removed",
-                {
-                    portalId,
-                    userId,
-                }
-            );
-
-            io.to(
-                `user:${hostUserId}`
-            ).emit(
-                "announcement:member-removed",
-                {
-                    portalId,
-                    userId,
-                }
-            );
+            if (hostUserId) {
+                io.to(
+                    userRoom(platformIdVal, hostUserId)
+                ).emit(
+                    "announcement:member-removed",
+                    {
+                        portalId,
+                        userId,
+                    }
+                );
+            }
         }
 
         return res.status(200).json({
@@ -1475,9 +1594,13 @@ const updatePortalMemberRole = async (
         } = req.params;
 
         const {
-            hostUserId,
             role,
-        } = req.body;
+        } = req.body || {};
+
+        const hostUserId =
+            req.body?.hostUserId || req.query?.hostUserId;
+
+        const platformId = req.platformId || req.body?.platformId || req.query?.platformId;
 
         if (!hostUserId) {
             return res.status(400).json({
@@ -1499,9 +1622,11 @@ const updatePortalMemberRole = async (
         }
 
         const portal =
-            await getPortalById(
-                portalId
-            );
+            req.portal ||
+            (await getPortalById(
+                portalId,
+                platformId
+            ));
 
         if (!portal) {
             return res.status(404).json({
@@ -1515,16 +1640,19 @@ const updatePortalMemberRole = async (
                 portalId,
                 userId:
                     hostUserId,
+                platformId,
             });
 
-        if (
-            !requester ||
-            requester.role !==
-                "host"
-        ) {
+        const isHostOrAdmin =
+            (requester &&
+                (requester.role === "host" ||
+                    requester.role === "admin")) ||
+            portal.createdBy === hostUserId;
+
+        if (!isHostOrAdmin) {
             return res.status(403).json({
                 message:
-                    "Only hosts can change member roles",
+                    "Only hosts or admins can change member roles",
             });
         }
 
@@ -1553,6 +1681,7 @@ const updatePortalMemberRole = async (
             await getMember({
                 portalId,
                 userId,
+                platformId,
             });
 
         if (!member) {
@@ -1567,31 +1696,36 @@ const updatePortalMemberRole = async (
                 portalId,
                 userId,
                 role,
+                platformId,
             });
 
         if (io) {
+            const platformIdVal = platformId || member?.platformId || portal?.platformId;
+            if (userId) {
+                io.to(
+                    userRoom(platformIdVal, userId)
+                ).emit(
+                    "announcement:member-role-updated",
+                    {
+                        portalId,
+                        userId,
+                        role,
+                    }
+                );
+            }
 
-            io.to(
-                `user:${userId}`
-            ).emit(
-                "announcement:member-role-updated",
-                {
-                    portalId,
-                    userId,
-                    role,
-                }
-            );
-
-            io.to(
-                `user:${hostUserId}`
-            ).emit(
-                "announcement:member-role-updated",
-                {
-                    portalId,
-                    userId,
-                    role,
-                }
-            );
+            if (hostUserId) {
+                io.to(
+                    userRoom(platformIdVal, hostUserId)
+                ).emit(
+                    "announcement:member-role-updated",
+                    {
+                        portalId,
+                        userId,
+                        role,
+                    }
+                );
+            }
         }
 
         return res.status(200).json({
@@ -1639,8 +1773,10 @@ const deleteAnnouncementPortal =
             const { portalId } =
                 req.params;
 
-            const { userId } =
-                req.body;
+            const userId =
+                req.body?.userId || req.query?.userId;
+
+            const platformId = req.platformId || req.body?.platformId || req.query?.platformId;
 
             if (!userId) {
                 return res.status(400).json({
@@ -1650,9 +1786,11 @@ const deleteAnnouncementPortal =
             }
 
             const portal =
-                await getPortalById(
-                    portalId
-                );
+                req.portal ||
+                (await getPortalById(
+                    portalId,
+                    platformId
+                ));
 
             if (!portal) {
                 return res.status(404).json({
@@ -1665,22 +1803,26 @@ const deleteAnnouncementPortal =
                 await getMember({
                     portalId,
                     userId,
+                    platformId,
                 });
 
-            if (
-                !member ||
-                member.role !==
-                    "host"
-            ) {
+            const isHostOrAdmin =
+                (member &&
+                    (member.role === "host" ||
+                        member.role === "admin")) ||
+                portal.createdBy === userId;
+
+            if (!isHostOrAdmin) {
                 return res.status(403).json({
                     message:
-                        "Only portal hosts can delete the portal",
+                        "Only portal hosts or admins can delete the portal",
                 });
             }
 
             const portalMembers =
                 await getMembersByPortal(
-                    portalId
+                    portalId,
+                    platformId
                 );
 
             for (
@@ -1693,16 +1835,17 @@ const deleteAnnouncementPortal =
 
                     userId:
                         portalMember.userId,
+                    platformId,
                 });
             }
 
             if (io) {
-
+                const platformIdVal = platformId || portal.platformId;
                 portalMembers.forEach(
                     (member) => {
 
                         io.to(
-                            `user:${member.userId}`
+                            userRoom(platformIdVal, member.userId)
                         ).emit(
                             "announcement:portal-deleted",
                             {
@@ -1714,7 +1857,8 @@ const deleteAnnouncementPortal =
             }
 
             await deletePortal(
-                portalId
+                portalId,
+                platformId
             );
 
             return res.status(200).json({

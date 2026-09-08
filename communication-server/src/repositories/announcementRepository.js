@@ -253,8 +253,27 @@ export const createPortal = async ({
 
 
 export const getPortalById = async (
-    portalId
+    portalId,
+    platformId
 ) => {
+    if (platformId) {
+        const result = await cassandra.execute(
+            `
+                SELECT *
+                FROM announcement_portals_by_id
+                WHERE platform_id = ?
+                AND portal_id = ?
+            `,
+            [
+                platformId,
+                portalId,
+            ],
+            {
+                prepare: true,
+            }
+        );
+        return rowToPortal(result.rows[0]);
+    }
 
     const result =
         await cassandra.execute(
@@ -262,6 +281,7 @@ export const getPortalById = async (
                 SELECT *
                 FROM announcement_portals_by_id
                 WHERE portal_id = ?
+                ALLOW FILTERING
             `,
             [
                 portalId,
@@ -278,21 +298,44 @@ export const getPortalById = async (
 
 
 export const deletePortal = async (
-    portalId
+    portalId,
+    platformId
 ) => {
+    let platId = platformId;
+    if (!platId) {
+        const portal = await getPortalById(portalId);
+        platId = portal?.platformId;
+    }
 
-    await cassandra.execute(
-        `
-            DELETE FROM announcement_portals_by_id
-            WHERE portal_id = ?
-        `,
-        [
-            portalId,
-        ],
-        {
-            prepare: true,
-        }
-    );
+    if (platId) {
+        await cassandra.execute(
+            `
+                DELETE FROM announcement_portals_by_id
+                WHERE platform_id = ?
+                AND portal_id = ?
+            `,
+            [
+                platId,
+                portalId,
+            ],
+            {
+                prepare: true,
+            }
+        );
+    } else {
+        await cassandra.execute(
+            `
+                DELETE FROM announcement_portals_by_id
+                WHERE portal_id = ?
+            `,
+            [
+                portalId,
+            ],
+            {
+                prepare: true,
+            }
+        );
+    }
 };
 
 
@@ -302,6 +345,7 @@ export const deletePortal = async (
 
 export const addMember = async ({
     portalId,
+    platformId,
     userId,
     role,
     addedBy,
@@ -314,6 +358,7 @@ export const addMember = async ({
             {
                 query: `
                     INSERT INTO portal_members_by_user (
+                        platform_id,
                         user_id,
                         portal_id,
                         role,
@@ -321,10 +366,11 @@ export const addMember = async ({
                         created_at,
                         updated_at
                     )
-                    VALUES (?, ?, ?, ?, ?, ?)
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
                 `,
 
                 params: [
+                    platformId,
                     userId,
                     portalId,
                     role,
@@ -337,6 +383,7 @@ export const addMember = async ({
             {
                 query: `
                     INSERT INTO portal_members_by_portal (
+                        platform_id,
                         portal_id,
                         user_id,
                         role,
@@ -344,10 +391,11 @@ export const addMember = async ({
                         created_at,
                         updated_at
                     )
-                    VALUES (?, ?, ?, ?, ?, ?)
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
                 `,
 
                 params: [
+                    platformId,
                     portalId,
                     userId,
                     role,
@@ -364,6 +412,7 @@ export const addMember = async ({
 
     return {
         portalId,
+        platformId,
         userId,
         role,
         addedBy,
@@ -393,7 +442,28 @@ export const addMembers = async (
 export const getMember = async ({
     portalId,
     userId,
+    platformId,
 }) => {
+    if (platformId) {
+        const result = await cassandra.execute(
+            `
+                SELECT *
+                FROM portal_members_by_portal
+                WHERE platform_id = ?
+                AND portal_id = ?
+                AND user_id = ?
+            `,
+            [
+                platformId,
+                portalId,
+                userId,
+            ],
+            {
+                prepare: true,
+            }
+        );
+        return rowToMember(result.rows[0]);
+    }
 
     const result =
         await cassandra.execute(
@@ -402,6 +472,7 @@ export const getMember = async ({
                 FROM portal_members_by_portal
                 WHERE portal_id = ?
                 AND user_id = ?
+                ALLOW FILTERING
             `,
             [
                 portalId,
@@ -420,8 +491,27 @@ export const getMember = async ({
 
 export const getMembersByPortal =
     async (
-        portalId
+        portalId,
+        platformId
     ) => {
+        if (platformId) {
+            const result = await cassandra.execute(
+                `
+                    SELECT *
+                    FROM portal_members_by_portal
+                    WHERE platform_id = ?
+                    AND portal_id = ?
+                `,
+                [
+                    platformId,
+                    portalId,
+                ],
+                {
+                    prepare: true,
+                }
+            );
+            return result.rows.map(rowToMember);
+        }
 
         const result =
             await cassandra.execute(
@@ -429,6 +519,7 @@ export const getMembersByPortal =
                     SELECT *
                     FROM portal_members_by_portal
                     WHERE portal_id = ?
+                    ALLOW FILTERING
                 `,
                 [
                     portalId,
@@ -446,8 +537,27 @@ export const getMembersByPortal =
 
 export const getPortalsByUser =
     async (
-        userId
+        userId,
+        platformId
     ) => {
+        if (platformId) {
+            const result = await cassandra.execute(
+                `
+                    SELECT *
+                    FROM portal_members_by_user
+                    WHERE platform_id = ?
+                    AND user_id = ?
+                `,
+                [
+                    platformId,
+                    userId,
+                ],
+                {
+                    prepare: true,
+                }
+            );
+            return result.rows.map(rowToMember);
+        }
 
         const result =
             await cassandra.execute(
@@ -455,6 +565,7 @@ export const getPortalsByUser =
                     SELECT *
                     FROM portal_members_by_user
                     WHERE user_id = ?
+                    ALLOW FILTERING
                 `,
                 [
                     userId,
@@ -475,25 +586,139 @@ export const updateMemberRole =
         portalId,
         userId,
         role,
+        platformId,
     }) => {
+
+        let platId = platformId;
+        if (!platId) {
+            const existingMember = await getMember({ portalId, userId });
+            platId = existingMember?.platformId;
+        }
 
         const updatedAt =
             new Date();
 
+        if (platId) {
+            await cassandra.batch(
+                [
+                    {
+                        query: `
+                            UPDATE portal_members_by_user
+                            SET role = ?,
+                                updated_at = ?
+                            WHERE platform_id = ?
+                            AND user_id = ?
+                            AND portal_id = ?
+                        `,
+
+                        params: [
+                            role,
+                            updatedAt,
+                            platId,
+                            userId,
+                            portalId,
+                        ],
+                    },
+
+                    {
+                        query: `
+                            UPDATE portal_members_by_portal
+                            SET role = ?,
+                                updated_at = ?
+                            WHERE platform_id = ?
+                            AND portal_id = ?
+                            AND user_id = ?
+                        `,
+
+                        params: [
+                            role,
+                            updatedAt,
+                            platId,
+                            portalId,
+                            userId,
+                        ],
+                    },
+                ],
+                {
+                    prepare: true,
+                }
+            );
+        } else {
+            await cassandra.batch(
+                [
+                    {
+                        query: `
+                            UPDATE portal_members_by_user
+                            SET role = ?,
+                                updated_at = ?
+                            WHERE user_id = ?
+                            AND portal_id = ?
+                        `,
+
+                        params: [
+                            role,
+                            updatedAt,
+                            userId,
+                            portalId,
+                        ],
+                    },
+
+                    {
+                        query: `
+                            UPDATE portal_members_by_portal
+                            SET role = ?,
+                                updated_at = ?
+                            WHERE portal_id = ?
+                            AND user_id = ?
+                        `,
+
+                        params: [
+                            role,
+                            updatedAt,
+                            portalId,
+                            userId,
+                        ],
+                    },
+                ],
+                {
+                    prepare: true,
+                }
+            );
+        }
+
+        return getMember({
+            portalId,
+            userId,
+            platformId: platId,
+        });
+    };
+
+
+export const removeMember = async ({
+    portalId,
+    userId,
+    platformId,
+}) => {
+
+    let platId = platformId;
+    if (!platId) {
+        const existingMember = await getMember({ portalId, userId });
+        platId = existingMember?.platformId;
+    }
+
+    if (platId) {
         await cassandra.batch(
             [
                 {
                     query: `
-                        UPDATE portal_members_by_user
-                        SET role = ?,
-                            updated_at = ?
-                        WHERE user_id = ?
+                        DELETE FROM portal_members_by_user
+                        WHERE platform_id = ?
+                        AND user_id = ?
                         AND portal_id = ?
                     `,
 
                     params: [
-                        role,
-                        updatedAt,
+                        platId,
                         userId,
                         portalId,
                     ],
@@ -501,16 +726,14 @@ export const updateMemberRole =
 
                 {
                     query: `
-                        UPDATE portal_members_by_portal
-                        SET role = ?,
-                            updated_at = ?
-                        WHERE portal_id = ?
+                        DELETE FROM portal_members_by_portal
+                        WHERE platform_id = ?
+                        AND portal_id = ?
                         AND user_id = ?
                     `,
 
                     params: [
-                        role,
-                        updatedAt,
+                        platId,
                         portalId,
                         userId,
                     ],
@@ -520,51 +743,40 @@ export const updateMemberRole =
                 prepare: true,
             }
         );
+    } else {
+        await cassandra.batch(
+            [
+                {
+                    query: `
+                        DELETE FROM portal_members_by_user
+                        WHERE user_id = ?
+                        AND portal_id = ?
+                    `,
 
-        return getMember({
-            portalId,
-            userId,
-        });
-    };
+                    params: [
+                        userId,
+                        portalId,
+                    ],
+                },
 
+                {
+                    query: `
+                        DELETE FROM portal_members_by_portal
+                        WHERE portal_id = ?
+                        AND user_id = ?
+                    `,
 
-export const removeMember = async ({
-    portalId,
-    userId,
-}) => {
-
-    await cassandra.batch(
-        [
+                    params: [
+                        portalId,
+                        userId,
+                    ],
+                },
+            ],
             {
-                query: `
-                    DELETE FROM portal_members_by_user
-                    WHERE user_id = ?
-                    AND portal_id = ?
-                `,
-
-                params: [
-                    userId,
-                    portalId,
-                ],
-            },
-
-            {
-                query: `
-                    DELETE FROM portal_members_by_portal
-                    WHERE portal_id = ?
-                    AND user_id = ?
-                `,
-
-                params: [
-                    portalId,
-                    userId,
-                ],
-            },
-        ],
-        {
-            prepare: true,
-        }
-    );
+                prepare: true,
+            }
+        );
+    }
 };
 
 
@@ -575,6 +787,7 @@ export const removeMember = async ({
 export const createAnnouncement = async ({
     announcementId,
     portalId,
+    platformId,
     senderId,
     title,
     content,
@@ -586,6 +799,10 @@ export const createAnnouncement = async ({
     createdAt = new Date(),
     updatedAt = createdAt,
 }) => {
+    if (!platformId && portalId) {
+        const portal = await getPortalById(portalId);
+        platformId = portal?.platformId;
+    }
 
     /*
      * Attachments are stored as JSON text.
@@ -629,6 +846,7 @@ export const createAnnouncement = async ({
             {
                 query: `
                     INSERT INTO announcements_by_id (
+                        platform_id,
                         announcement_id,
                         portal_id,
                         sender_id,
@@ -642,10 +860,11 @@ export const createAnnouncement = async ({
                         created_at,
                         updated_at
                     )
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 `,
 
                 params: [
+                    platformId,
                     announcementId,
                     portalId,
                     senderId,
@@ -664,6 +883,7 @@ export const createAnnouncement = async ({
             {
                 query: `
                     INSERT INTO announcements_by_portal (
+                        platform_id,
                         portal_id,
                         published_at,
                         announcement_id,
@@ -677,10 +897,11 @@ export const createAnnouncement = async ({
                         created_at,
                         updated_at
                     )
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 `,
 
                 params: [
+                    platformId,
                     portalId,
                     publishedAt,
                     announcementId,
@@ -741,8 +962,28 @@ export const createAnnouncement = async ({
 
 export const getAnnouncementById =
     async (
-        announcementId
+        announcementId,
+        platformId
     ) => {
+
+        if (platformId) {
+            const result = await cassandra.execute(
+                `
+                    SELECT *
+                    FROM announcements_by_id
+                    WHERE platform_id = ?
+                    AND announcement_id = ?
+                `,
+                [
+                    platformId,
+                    announcementId,
+                ],
+                {
+                    prepare: true,
+                }
+            );
+            return rowToAnnouncement(result.rows[0]);
+        }
 
         const result =
             await cassandra.execute(
@@ -750,6 +991,7 @@ export const getAnnouncementById =
                     SELECT *
                     FROM announcements_by_id
                     WHERE announcement_id = ?
+                    ALLOW FILTERING
                 `,
                 [
                     announcementId,
@@ -771,8 +1013,27 @@ export const getAnnouncementById =
 
 export const getAnnouncementsByPortal =
     async (
-        portalId
+        portalId,
+        platformId
     ) => {
+        if (platformId) {
+            const result = await cassandra.execute(
+                `
+                    SELECT *
+                    FROM announcements_by_portal
+                    WHERE platform_id = ?
+                    AND portal_id = ?
+                `,
+                [
+                    platformId,
+                    portalId,
+                ],
+                {
+                    prepare: true,
+                }
+            );
+            return result.rows.map(rowToAnnouncement);
+        }
 
         const result =
             await cassandra.execute(
@@ -780,6 +1041,7 @@ export const getAnnouncementsByPortal =
                     SELECT *
                     FROM announcements_by_portal
                     WHERE portal_id = ?
+                    ALLOW FILTERING
                 `,
                 [
                     portalId,
@@ -803,6 +1065,7 @@ export const updateAnnouncement =
     async ({
         announcementId,
         portalId,
+        platformId,
         title,
         content,
         targetAudience,
@@ -811,13 +1074,15 @@ export const updateAnnouncement =
 
         const existing =
             await getAnnouncementById(
-                announcementId
+                announcementId,
+                platformId
             );
 
         if (!existing) {
             return null;
         }
 
+        let platId = platformId || existing.platformId;
         const updatedAt =
             new Date();
 
@@ -849,10 +1114,6 @@ export const updateAnnouncement =
 
         /*
          * Preserve existing selected users.
-         *
-         * The current controller does not send
-         * targetUserIds during update, so we don't
-         * overwrite them accidentally.
          */
         const existingTargetUserIds =
             new Set(
@@ -861,58 +1122,117 @@ export const updateAnnouncement =
             );
 
 
-        await cassandra.batch(
-            [
+        if (platId) {
+            await cassandra.batch(
+                [
+                    {
+                        query: `
+                            UPDATE announcements_by_id
+                            SET title = ?,
+                                content = ?,
+                                target_audience = ?,
+                                expires_at = ?,
+                                updated_at = ?
+                            WHERE platform_id = ?
+                            AND announcement_id = ?
+                        `,
+
+                        params: [
+                            newTitle,
+                            newContent,
+                            newTargetAudience,
+                            newExpiresAt,
+                            updatedAt,
+                            platId,
+                            announcementId,
+                        ],
+                    },
+
+                    {
+                        query: `
+                            UPDATE announcements_by_portal
+                            SET title = ?,
+                                content = ?,
+                                target_audience = ?,
+                                expires_at = ?,
+                                updated_at = ?
+                            WHERE platform_id = ?
+                            AND portal_id = ?
+                            AND published_at = ?
+                            AND announcement_id = ?
+                        `,
+
+                        params: [
+                            newTitle,
+                            newContent,
+                            newTargetAudience,
+                            newExpiresAt,
+                            updatedAt,
+                            platId,
+                            portalId,
+                            existing.publishedAt,
+                            announcementId,
+                        ],
+                    },
+                ],
                 {
-                    query: `
-                        UPDATE announcements_by_id
-                        SET title = ?,
-                            content = ?,
-                            target_audience = ?,
-                            expires_at = ?,
-                            updated_at = ?
-                        WHERE announcement_id = ?
-                    `,
+                    prepare: true,
+                }
+            );
+        } else {
+            await cassandra.batch(
+                [
+                    {
+                        query: `
+                            UPDATE announcements_by_id
+                            SET title = ?,
+                                content = ?,
+                                target_audience = ?,
+                                expires_at = ?,
+                                updated_at = ?
+                            WHERE announcement_id = ?
+                        `,
 
-                    params: [
-                        newTitle,
-                        newContent,
-                        newTargetAudience,
-                        newExpiresAt,
-                        updatedAt,
-                        announcementId,
-                    ],
-                },
+                        params: [
+                            newTitle,
+                            newContent,
+                            newTargetAudience,
+                            newExpiresAt,
+                            updatedAt,
+                            announcementId,
+                        ],
+                    },
 
+                    {
+                        query: `
+                            UPDATE announcements_by_portal
+                            SET title = ?,
+                                content = ?,
+                                target_audience = ?,
+                                expires_at = ?,
+                                updated_at = ?
+                            WHERE portal_id = ?
+                            AND published_at = ?
+                            AND announcement_id = ?
+                        `,
+
+                        params: [
+                            newTitle,
+                            newContent,
+                            newTargetAudience,
+                            newExpiresAt,
+                            updatedAt,
+                            portalId,
+                            existing.publishedAt,
+                            announcementId,
+                        ],
+                    },
+                ],
                 {
-                    query: `
-                        UPDATE announcements_by_portal
-                        SET title = ?,
-                            content = ?,
-                            target_audience = ?,
-                            expires_at = ?,
-                            updated_at = ?
-                        WHERE portal_id = ?
-                        AND published_at = ?
-                        AND announcement_id = ?
-                    `,
-
-                    params: [
-                        newTitle,
-                        newContent,
-                        newTargetAudience,
-                        newExpiresAt,
-                        updatedAt,
-                        portalId,
-                        existing.publishedAt,
-                        announcementId,
-                    ],
-                },
-            ],
-            {
-                prepare: true,
-            }
-        );
+                    prepare: true,
+                }
+            );
+        }
 
 
         return {
@@ -948,51 +1268,93 @@ export const deleteAnnouncement =
     async ({
         announcementId,
         portalId,
+        platformId,
     }) => {
 
         const announcement =
             await getAnnouncementById(
-                announcementId
+                announcementId,
+                platformId
             );
 
         if (!announcement) {
             return null;
         }
 
+        let platId = platformId || announcement.platformId;
 
-        await cassandra.batch(
-            [
+        if (platId) {
+            await cassandra.batch(
+                [
+                    {
+                        query: `
+                            DELETE FROM announcements_by_id
+                            WHERE platform_id = ?
+                            AND announcement_id = ?
+                        `,
+
+                        params: [
+                            platId,
+                            announcementId,
+                        ],
+                    },
+
+                    {
+                        query: `
+                            DELETE FROM announcements_by_portal
+                            WHERE platform_id = ?
+                            AND portal_id = ?
+                            AND published_at = ?
+                            AND announcement_id = ?
+                        `,
+
+                        params: [
+                            platId,
+                            portalId,
+                            announcement.publishedAt,
+                            announcementId,
+                        ],
+                    },
+                ],
                 {
-                    query: `
-                        DELETE FROM announcements_by_id
-                        WHERE announcement_id = ?
-                    `,
+                    prepare: true,
+                }
+            );
+        } else {
+            await cassandra.batch(
+                [
+                    {
+                        query: `
+                            DELETE FROM announcements_by_id
+                            WHERE announcement_id = ?
+                        `,
 
-                    params: [
-                        announcementId,
-                    ],
-                },
+                        params: [
+                            announcementId,
+                        ],
+                    },
 
+                    {
+                        query: `
+                            DELETE FROM announcements_by_portal
+                            WHERE portal_id = ?
+                            AND published_at = ?
+                            AND announcement_id = ?
+                        `,
+
+                        params: [
+                            portalId,
+                            announcement.publishedAt,
+                            announcementId,
+                        ],
+                    },
+                ],
                 {
-                    query: `
-                        DELETE FROM announcements_by_portal
-                        WHERE portal_id = ?
-                        AND published_at = ?
-                        AND announcement_id = ?
-                    `,
-
-                    params: [
-                        portalId,
-                        announcement.publishedAt,
-                        announcementId,
-                    ],
-                },
-            ],
-            {
-                prepare: true,
-            }
-        );
+                    prepare: true,
+                }
+            );
+        }
 
 
         return announcement;
-    };
+    };

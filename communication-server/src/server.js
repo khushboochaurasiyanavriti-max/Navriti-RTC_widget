@@ -9,6 +9,9 @@ import {Server} from "socket.io";
 import {
     setAnnouncementSocket,
 } from "./controllers/announcementPortalController.js";
+import {
+    setConversationSocket,
+} from "./controllers/conversationController.js";
 
 dotenv.config();
 const httpServer = http.createServer(app);
@@ -30,6 +33,7 @@ const io = new Server(httpServer,{
 });
 
 setAnnouncementSocket(io);
+setConversationSocket(io);
 socketHandler(io);
 await connectCassandra();
 

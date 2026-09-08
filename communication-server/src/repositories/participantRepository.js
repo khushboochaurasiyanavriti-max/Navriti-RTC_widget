@@ -1,10 +1,21 @@
 import cassandra from "../config/cassandra.js";
 
-const requirePlatformId = (platformId) => { 
-    if (!platformId) 
-        throw new Error("platformId is required"); 
+
+const requirePlatformId = (platformId) => {
+
+    if (!platformId) {
+        throw new Error(
+            "platformId is required"
+        );
+    }
 };
 
+
+/*
+ * ---------------------------------------------------------
+ * Add Single Participant
+ * ---------------------------------------------------------
+ */
 
 export const addParticipant = async ({
     userId,
@@ -13,18 +24,22 @@ export const addParticipant = async ({
     joinedAt = new Date(),
 }) => {
 
+    requirePlatformId(platformId);
+
+
     await cassandra.batch(
         [
             {
                 query: `
                     INSERT INTO participants_by_user (
-                        platformId,
+                        platform_id,
                         user_id,
                         conversation_id,
                         joined_at
                     )
-                    VALUES (?, ?, ?)
+                    VALUES (?, ?, ?, ?)
                 `,
+
                 params: [
                     platformId,
                     userId,
@@ -32,16 +47,18 @@ export const addParticipant = async ({
                     joinedAt,
                 ],
             },
+
             {
                 query: `
                     INSERT INTO participants_by_conversation (
-                        platformId,
+                        platform_id,
                         conversation_id,
                         user_id,
                         joined_at
                     )
-                    VALUES (?, ?, ?)
+                    VALUES (?, ?, ?, ?)
                 `,
+
                 params: [
                     platformId,
                     conversationId,
@@ -50,104 +67,188 @@ export const addParticipant = async ({
                 ],
             },
         ],
-        { prepare: true }
+
+        {
+            prepare: true,
+        }
     );
 };
 
+
+/*
+ * ---------------------------------------------------------
+ * Add Multiple Participants
+ * ---------------------------------------------------------
+ */
 
 export const addParticipants = async ({
     conversationId,
     userIds,
     platformId,
 }) => {
+
     requirePlatformId(platformId);
+
 
     const queries = [];
 
-    const joinedAt = new Date();
+    const joinedAt =
+        new Date();
 
-    for (const userId of userIds) {
 
-        queries.push({
-            query: `
-                INSERT INTO participants_by_user (
+    for (
+        const userId of userIds
+    ) {
+
+        queries.push(
+            {
+                query: `
+                    INSERT INTO participants_by_user (
+                        platform_id,
+                        user_id,
+                        conversation_id,
+                        joined_at
+                    )
+                    VALUES (?, ?, ?, ?)
+                `,
+
+                params: [
                     platformId,
-                    user_id,
-                    conversation_id,
-                    joined_at
-                )
-                VALUES (?, ?, ?)
-            `,
-            params: [
-                platformId,
-                userId,
-                conversationId,
-                joinedAt,
-            ],
-        });
+                    userId,
+                    conversationId,
+                    joinedAt,
+                ],
+            }
+        );
 
-        queries.push({
-            query: `
-                INSERT INTO participants_by_conversation (
+
+        queries.push(
+            {
+                query: `
+                    INSERT INTO participants_by_conversation (
+                        platform_id,
+                        conversation_id,
+                        user_id,
+                        joined_at
+                    )
+                    VALUES (?, ?, ?, ?)
+                `,
+
+                params: [
                     platformId,
-                    conversation_id,
-                    user_id,
-                    joined_at
-                )
-                VALUES (?, ?, ?)
-            `,
-            params: [
-                platformId,
-                conversationId,
-                userId,
-                joinedAt,
-            ],
-        });
+                    conversationId,
+                    userId,
+                    joinedAt,
+                ],
+            }
+        );
     }
 
+
     if (queries.length) {
+
         await cassandra.batch(
             queries,
-            { prepare: true }
+
+            {
+                prepare: true,
+            }
         );
     }
 };
 
 
-export const getByUserId = async (userId,platformId) => {
-    requirePlatformId(platformId);
+/*
+ * ---------------------------------------------------------
+ * Get Conversations By User
+ * ---------------------------------------------------------
+ */
+
+export const getByUserId = async (
+    userId,
+    platformId,
+) => {
+
+    requirePlatformId(
+        platformId
+    );
+
+
     const query = `
-        SELECT user_id, conversation_id, joined_at
+        SELECT
+            user_id,
+            conversation_id,
+            joined_at
         FROM participants_by_user
-        WHERE platform_id = ? AND  user_id = ?
+        WHERE
+            platform_id = ?
+            AND user_id = ?
+        ALLOW FILTERING
     `;
 
-    const result = await cassandra.execute(
-        query,
-        [platformId,userId],
-        { prepare: true }
-    );
+
+    const result =
+        await cassandra.execute(
+            query,
+
+            [
+                platformId,
+                userId,
+            ],
+
+            {
+                prepare: true,
+            }
+        );
+
 
     return result.rows;
 };
 
 
+/*
+ * ---------------------------------------------------------
+ * Get Participants By Conversation
+ * ---------------------------------------------------------
+ */
+
 export const getByConversationId = async (
     conversationId,
     platformId,
 ) => {
-    requirePlatformId(platformId);
+
+    requirePlatformId(
+        platformId
+    );
+
+
     const query = `
-        SELECT user_id, conversation_id, joined_at
+        SELECT
+            user_id,
+            conversation_id,
+            joined_at
         FROM participants_by_conversation
-        WHERE platform_id = ? AND  conversation_id = ?
+        WHERE
+            platform_id = ?
+            AND conversation_id = ?
+        ALLOW FILTERING
     `;
 
-    const result = await cassandra.execute(
-        query,
-        [platformId,conversationId],
-        { prepare: true }
-    );
+
+    const result =
+        await cassandra.execute(
+            query,
+
+            [
+                platformId,
+                conversationId,
+            ],
+
+            {
+                prepare: true,
+            }
+        );
+
 
     return result.rows;
 };

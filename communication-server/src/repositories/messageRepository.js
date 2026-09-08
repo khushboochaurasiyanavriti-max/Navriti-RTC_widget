@@ -119,14 +119,6 @@ const getPlatformConversation = async ({
     }
 
 
-    if (
-        conversation.platformId !==
-        platformId
-    ) {
-        return null;
-    }
-
-
     return conversation;
 };
 
@@ -181,6 +173,7 @@ export const createMessage = async ({
             {
                 query: `
                     INSERT INTO messages_by_conversation (
+                        platform_id,
                         conversation_id,
                         created_at,
                         message_id,
@@ -192,10 +185,11 @@ export const createMessage = async ({
                         is_deleted,
                         updated_at
                     )
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 `,
 
                 params: [
+                    platformId,
                     conversationId,
                     now,
                     messageId,
@@ -212,6 +206,7 @@ export const createMessage = async ({
             {
                 query: `
                     INSERT INTO messages_by_id (
+                        platform_id,
                         message_id,
                         conversation_id,
                         created_at,
@@ -223,10 +218,11 @@ export const createMessage = async ({
                         is_deleted,
                         updated_at
                     )
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 `,
 
                 params: [
+                    platformId,
                     messageId,
                     conversationId,
                     now,
@@ -331,6 +327,7 @@ export const getMessages = async ({
 
     query += `
         LIMIT ?
+        ALLOW FILTERING
     `;
 
 
@@ -391,6 +388,7 @@ export const findMessageById = async ({
                 SELECT *
                 FROM messages_by_id
                 WHERE message_id = ?
+                ALLOW FILTERING
             `,
             [
                 messageId,
@@ -484,12 +482,14 @@ export const updateMessageContent = async ({
                     SET
                         content = ?,
                         updated_at = ?
-                    WHERE message_id = ?
+                    WHERE platform_id = ?
+                        AND message_id = ?
                 `,
 
                 params: [
                     content,
                     updatedAt,
+                    platformId,
                     messageId,
                 ],
             },
@@ -500,8 +500,8 @@ export const updateMessageContent = async ({
                     SET
                         content = ?,
                         updated_at = ?
-                    WHERE
-                        conversation_id = ?
+                    WHERE platform_id = ?
+                        AND conversation_id = ?
                         AND created_at = ?
                         AND message_id = ?
                 `,
@@ -509,6 +509,7 @@ export const updateMessageContent = async ({
                 params: [
                     content,
                     updatedAt,
+                    platformId,
                     message.conversationId,
                     message.createdAt,
                     messageId,
@@ -581,11 +582,13 @@ export const softDeleteMessage = async ({
                     SET
                         is_deleted = true,
                         updated_at = ?
-                    WHERE message_id = ?
+                    WHERE platform_id = ?
+                        AND message_id = ?
                 `,
 
                 params: [
                     updatedAt,
+                    platformId,
                     messageId,
                 ],
             },
@@ -596,14 +599,15 @@ export const softDeleteMessage = async ({
                     SET
                         is_deleted = true,
                         updated_at = ?
-                    WHERE
-                        conversation_id = ?
+                    WHERE platform_id = ?
+                        AND conversation_id = ?
                         AND created_at = ?
                         AND message_id = ?
                 `,
 
                 params: [
                     updatedAt,
+                    platformId,
                     message.conversationId,
                     message.createdAt,
                     messageId,
@@ -662,6 +666,7 @@ export const getLatestMessage = async ({
                 FROM messages_by_conversation
                 WHERE conversation_id = ?
                 LIMIT 1
+                ALLOW FILTERING
             `,
 
             [

@@ -14,6 +14,7 @@ export const findByParticipantKey = async (participantKey) => {
         SELECT *
         FROM conversations_by_participant_key
         WHERE participant_key = ?
+        ALLOW FILTERING
     `;
 
     const result = await cassandra.execute(
@@ -43,14 +44,14 @@ export const createConversation = async ({
             query: `
                 INSERT INTO conversations_by_id (
                     conversation_id,
-                    platformId,
+                    platform_id,
                     type,
                     display_name,
                     participant_key,
                     created_at,
                     updated_at
                 )
-                VALUES (?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
             `,
             params: [
                 conversationId,
@@ -70,12 +71,13 @@ export const createConversation = async ({
                 INSERT INTO conversations_by_participant_key (
                     participant_key,
                     conversation_id,
+                    platform_id,
                     type,
                     display_name,
                     created_at,
                     updated_at
                 )
-                VALUES (?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
             `,
             params: [
                 participantKey,
@@ -152,13 +154,13 @@ export const getOrCreateDirect = async ({
             INSERT INTO conversations_by_participant_key (
                 participant_key,
                 conversation_id,
-                platformId,
+                platform_id,
                 type,
                 display_name,
                 created_at,
                 updated_at
             )
-            VALUES (?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
             IF NOT EXISTS
         `,
         [
@@ -188,14 +190,14 @@ export const getOrCreateDirect = async ({
         `
             INSERT INTO conversations_by_id (
                 conversation_id,
-                platformId,
+                platform_id,
                 type,
                 display_name,
                 participant_key,
                 created_at,
                 updated_at
             )
-            VALUES (?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
         `,
         [
             conversationId,
@@ -221,6 +223,7 @@ export const findById = async (conversationId,platformId) => {
         SELECT *
         FROM conversations_by_id
         WHERE conversation_id = ?
+        ALLOW FILTERING
     `;
 
     const result = await cassandra.execute(
@@ -273,6 +276,8 @@ export const createGroup = async ({
     displayName,
     platformId,
 }) => {
+    requirePlatformId(platformId);
+
     const conversationId = generateConversationId();
     const now = new Date();
 
@@ -280,14 +285,14 @@ export const createGroup = async ({
         `
         INSERT INTO conversations_by_id (
             conversation_id,
-            platformId,
+            platform_id,
             type,
             display_name,
             participant_key,
             created_at,
             updated_at
         )
-        VALUES (?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
         `,
         [
             conversationId,
