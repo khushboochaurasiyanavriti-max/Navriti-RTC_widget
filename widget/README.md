@@ -1,18 +1,76 @@
-# React + Vite
+# @rtc-widget/react
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Reusable React Communication Widget with 1-on-1 & group messaging, announcement portals, WebRTC screen sharing, and multi-tenant platform isolation.
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## 📦 Installation & Usage
 
-## React Compiler
+In your host application:
 
-The React Compiler is enabled on this template. See [this documentation](https://react.dev/learn/react-compiler) for more information.
+```bash
+npm install @rtc-widget/react
+```
 
-Note: This will impact Vite dev & build performances.
+Import component and styles:
 
-## Expanding the ESLint configuration
+```jsx
+import CommunicationWidget from "@rtc-widget/react";
+import "@rtc-widget/react/style.css";
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+function App() {
+  const currentUser = {
+    userId: "user-123",
+    displayName: "Jane Doe",
+    role: "user", // "user" | "admin"
+  };
+
+  const users = [
+    currentUser,
+    { userId: "user-456", displayName: "John Admin", role: "admin" },
+  ];
+
+  return (
+    <CommunicationWidget
+      currentUser={currentUser}
+      users={users}
+      serverUrl="http://localhost:5000"
+      platformId="platform-test1"
+      features={{
+        chat: true,
+        groupChat: true,
+        announcements: true,
+        screenShare: true,
+      }}
+    />
+  );
+}
+```
+
+---
+
+## ⚙️ Component Props Reference
+
+| Prop Name | Type | Description | Required | Default |
+| :--- | :--- | :--- | :--- | :--- |
+| `currentUser` | `Object` | Object containing `{ userId, displayName, role }` | Yes | — |
+| `users` | `Array` | Array of available user objects in the system | Yes | `[]` |
+| `serverUrl` | `String` | URL of the backend `communication-server` | Yes | `"http://localhost:5000"` |
+| `platformId` | `String` | Tenant identifier for platform isolation | Yes | — |
+| `features` | `Object` | Feature flags object `{ chat, groupChat, announcements, screenShare }` | No | All `true` |
+| `onBack` | `Function` | Optional callback when widget close/back button is clicked | No | — |
+
+---
+
+## 🛠️ Build Commands
+
+```bash
+# Development mode
+npm run dev
+
+# Build library dist/ files
+npm run build
+
+# Preview build
+npm run preview
+```

@@ -85,7 +85,7 @@ function App() {
                     currentUser={currentUser}
                     users={users}
                     serverUrl="http://localhost:5000"
-                    platformId="ecommerce-platform"
+                    platformId="platform-test2"
                     features={{
                         chat: true,
                         groupChat: true,

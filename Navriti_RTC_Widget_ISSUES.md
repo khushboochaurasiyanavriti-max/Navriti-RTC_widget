@@ -225,34 +225,17 @@ Automatic socket reconnection should be tested while multiple widget features ar
 
 ---
 
-# 6. Cassandra Migration Utilities Should Remain Separate From Runtime
+# 6. Legacy Migration & Standalone Test Utilities Cleaned Up
 
 ## Status
 
-Documentation / Maintenance
+Resolved
 
 ## Description
 
-The repository contains migration and database utility files:
+The temporary database migration and scratch test utility scripts (`testCassandra.js`, `testMessageCassandra.js`, `testAnnouncementCassandra.js`, and legacy migration scripts) have been removed from `communication-server/src/`.
 
-```text
-communication-server/src/migrateMongoToCassandra.js
-communication-server/src/migrateAnnouncementsMongoToCassandra.js
-communication-server/src/testCassandra.js
-communication-server/src/testMessageCassandra.js
-communication-server/src/testAnnouncementCassandra.js
-```
-
-These utilities should not be treated as part of the normal application startup process.
-
-## Follow-Up
-
-Before future cleanup or deployment:
-
-- Confirm whether MongoDB migration is fully complete.
-- Archive or remove obsolete migration utilities if they are no longer required.
-- Keep Cassandra runtime configuration independent from migration scripts.
-- Ensure production startup uses only the current Cassandra repositories.
+The production application runtime relies exclusively on the core Cassandra repositories (`announcementRepository.js`, `conversationRepository.js`, `messageRepository.js`, `participantRepository.js`) and database configurations.
 
 ---
 
@@ -280,11 +263,11 @@ Documentation should be updated whenever there are changes to:
 ## Documentation Files
 
 ```text
-Readme.md
-ISSUES.md
+README.md
+Navriti_RTC_Widget_ISSUES.md
 ```
 
-The README should describe the currently active architecture and commands rather than historical implementation details.
+The README describes the currently active architecture, Cassandra schemas, APIs, socket events, and host application configurations.
 
 ---
 
@@ -304,17 +287,12 @@ This allows the client to attempt direct WebSocket communication first while ret
 
 ## Automatic Reconnection
 
-The client supports automatic reconnection:
+## Announcement Portal CRUD Operations & Platform Isolation
 
-```js
-reconnection: true,
-reconnectionAttempts: Infinity,
-reconnectionDelay: 1000,
-reconnectionDelayMax: 5000,
-timeout: 20000,
-```
-
-Further room and feature-state restoration remains an open improvement.
+- Fixed missing `platform_id` partition key parameters across all Cassandra repository functions (`updateAnnouncement`, `deleteAnnouncement`, `updateMemberRole`, `removeMember`, `getPortalById`, `getMember`, etc.).
+- Updated Express controller authorization checks to allow host, admin, and portal creators to manage member roles, remove members, and update/delete announcements.
+- Aligned HTTP `DELETE` service methods in `announcementPortalService.js` to pass `platformId` and `hostUserId`/`userId` via query parameters and body.
+- Added real-time socket broadcasts (`announcement:created`, `announcement:updated`, `announcement:deleted`, `announcement:member-role-updated`, `announcement:member-removed`, `announcement:portal-deleted`) to synchronize all connected users.
 
 ---
 
@@ -322,10 +300,12 @@ Further room and feature-state restoration remains an open improvement.
 
 | Priority | Issue | Status |
 |---|---|---|
+| Resolved | Announcement Portal CRUD & Member Management | Resolved |
+| Resolved | Cassandra Partition Key & Platform Isolation Alignment | Resolved |
+| Resolved | Legacy Migration & Scratch Test Utilities Cleanup | Resolved |
 | High | Restore active Socket.IO rooms after reconnect | Open |
 | High | Test reconnection with concurrent activities | Open |
 | Medium | Keep socket connection independent from feature state | Open |
 | Medium | Multi-instance widget isolation testing | Needs Continued Testing |
 | Medium | Test WebSocket-first transport across networks | Needs Continued Testing |
-| Low | Clean up/archive completed Cassandra migration utilities | Follow-Up |
 | Ongoing | Keep documentation synchronized with runtime code | Ongoing |
