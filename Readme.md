@@ -69,20 +69,32 @@ WITH replication = {'class': 'SimpleStrategy', 'replication_factor': '1'};
 
 USE navriti;
 
--- Conversations by ID
+-- 1. Conversations by ID
 CREATE TABLE IF NOT EXISTS conversations_by_id (
-    platform_id text,
     conversation_id text,
-    is_group boolean,
-    name text,
-    created_by text,
+    platform_id text,
+    type text,
+    display_name text,
+    participant_key text,
     created_at timestamp,
     updated_at timestamp,
     PRIMARY KEY (platform_id, conversation_id)
 );
 
--- Participants by User
-CREATE TABLE IF NOT EXISTS participants_by_user_v2 (
+-- 2. Conversations by Participant Key (Deduplication)
+CREATE TABLE IF NOT EXISTS conversations_by_participant_key (
+    participant_key text,
+    conversation_id text,
+    platform_id text,
+    type text,
+    display_name text,
+    created_at timestamp,
+    updated_at timestamp,
+    PRIMARY KEY (participant_key)
+);
+
+-- 3. Participants by User
+CREATE TABLE IF NOT EXISTS participants_by_user (
     platform_id text,
     user_id text,
     conversation_id text,
@@ -90,8 +102,8 @@ CREATE TABLE IF NOT EXISTS participants_by_user_v2 (
     PRIMARY KEY ((platform_id, user_id), conversation_id)
 );
 
--- Participants by Conversation
-CREATE TABLE IF NOT EXISTS participants_by_conversation_v2 (
+-- 4. Participants by Conversation
+CREATE TABLE IF NOT EXISTS participants_by_conversation (
     platform_id text,
     conversation_id text,
     user_id text,
@@ -99,7 +111,7 @@ CREATE TABLE IF NOT EXISTS participants_by_conversation_v2 (
     PRIMARY KEY ((platform_id, conversation_id), user_id)
 );
 
--- Messages by Conversation
+-- 5. Messages by Conversation
 CREATE TABLE IF NOT EXISTS messages_by_conversation (
     platform_id text,
     conversation_id text,
@@ -107,30 +119,31 @@ CREATE TABLE IF NOT EXISTS messages_by_conversation (
     message_id text,
     sender_id text,
     content text,
-    attachments text,
-    edited boolean,
-    deleted boolean,
-    mentions set<text>,
+    message_type text,
+    attachment text,
+    status text,
+    is_deleted boolean,
+    updated_at timestamp,
     PRIMARY KEY ((platform_id, conversation_id), created_at, message_id)
 ) WITH CLUSTERING ORDER BY (created_at DESC, message_id ASC);
 
--- Messages by ID
+-- 6. Messages by ID
 CREATE TABLE IF NOT EXISTS messages_by_id (
     platform_id text,
     message_id text,
     conversation_id text,
+    created_at timestamp,
     sender_id text,
     content text,
-    attachments text,
-    edited boolean,
-    deleted boolean,
-    mentions set<text>,
-    created_at timestamp,
+    message_type text,
+    attachment text,
+    status text,
+    is_deleted boolean,
     updated_at timestamp,
     PRIMARY KEY ((platform_id, message_id))
 );
 
--- Announcement Portals by ID
+-- 7. Announcement Portals by ID
 CREATE TABLE IF NOT EXISTS announcement_portals_by_id (
     platform_id text,
     portal_id text,
@@ -143,7 +156,7 @@ CREATE TABLE IF NOT EXISTS announcement_portals_by_id (
     PRIMARY KEY (platform_id, portal_id)
 );
 
--- Portal Members by User
+-- 8. Portal Members by User
 CREATE TABLE IF NOT EXISTS portal_members_by_user (
     platform_id text,
     user_id text,
@@ -155,7 +168,7 @@ CREATE TABLE IF NOT EXISTS portal_members_by_user (
     PRIMARY KEY ((platform_id, user_id), portal_id)
 );
 
--- Portal Members by Portal
+-- 9. Portal Members by Portal
 CREATE TABLE IF NOT EXISTS portal_members_by_portal (
     platform_id text,
     portal_id text,
@@ -167,7 +180,7 @@ CREATE TABLE IF NOT EXISTS portal_members_by_portal (
     PRIMARY KEY ((platform_id, portal_id), user_id)
 );
 
--- Announcements by ID
+-- 10. Announcements by ID
 CREATE TABLE IF NOT EXISTS announcements_by_id (
     platform_id text,
     announcement_id text,
@@ -185,7 +198,7 @@ CREATE TABLE IF NOT EXISTS announcements_by_id (
     PRIMARY KEY ((platform_id, announcement_id))
 );
 
--- Announcements by Portal
+-- 11. Announcements by Portal
 CREATE TABLE IF NOT EXISTS announcements_by_portal (
     platform_id text,
     portal_id text,
@@ -202,6 +215,121 @@ CREATE TABLE IF NOT EXISTS announcements_by_portal (
     updated_at timestamp,
     PRIMARY KEY ((platform_id, portal_id), published_at, announcement_id)
 ) WITH CLUSTERING ORDER BY (published_at DESC, announcement_id ASC);
+```
+
+---
+
+## 🔍 Exact Runtime Repository Queries
+
+Below are the exact Cassandra CQL queries executed by the backend repositories:
+
+### Conversations Repository (`conversationRepository.js`)
+
+```sql
+-- Find conversation by participant key (Deduplication)
+SELECT * FROM conversations_by_participant_key WHERE participant_key = ? ALLOW FILTERING;
+
+-- Create direct conversation (atomic claim)
+INSERT INTO conversations_by_participant_key (participant_key, conversation_id, platform_id, type, display_name, created_at, updated_at) 
+VALUES (?, ?, ?, ?, ?, ?, ?) IF NOT EXISTS;
+
+-- Insert into conversations_by_id
+INSERT INTO conversations_by_id (conversation_id, platform_id, type, display_name, participant_key, created_at, updated_at) 
+VALUES (?, ?, ?, ?, ?, ?, ?);
+
+-- Find conversation by ID
+SELECT * FROM conversations_by_id WHERE conversation_id = ? ALLOW FILTERING;
+```
+
+### Participants Repository (`participantRepository.js`)
+
+```sql
+-- Add participant batch insert
+INSERT INTO participants_by_user (platform_id, user_id, conversation_id, joined_at) VALUES (?, ?, ?, ?);
+INSERT INTO participants_by_conversation (platform_id, conversation_id, user_id, joined_at) VALUES (?, ?, ?, ?);
+
+-- Get conversations by user ID
+SELECT user_id, conversation_id, joined_at FROM participants_by_user WHERE platform_id = ? AND user_id = ? ALLOW FILTERING;
+
+-- Get participants by conversation ID
+SELECT user_id, conversation_id, joined_at FROM participants_by_conversation WHERE platform_id = ? AND conversation_id = ? ALLOW FILTERING;
+```
+
+### Messages Repository (`messageRepository.js`)
+
+```sql
+-- Insert message (batch insert into both tables)
+INSERT INTO messages_by_conversation (platform_id, conversation_id, created_at, message_id, sender_id, content, message_type, attachment, status, is_deleted, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+INSERT INTO messages_by_id (platform_id, message_id, conversation_id, created_at, sender_id, content, message_type, attachment, status, is_deleted, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+-- Get conversation messages (paginated)
+SELECT * FROM messages_by_conversation WHERE conversation_id = ? AND created_at < ? LIMIT ? ALLOW FILTERING;
+
+-- Get single message by ID
+SELECT * FROM messages_by_id WHERE message_id = ? ALLOW FILTERING;
+
+-- Update message content (batch update)
+UPDATE messages_by_id SET content = ?, updated_at = ? WHERE platform_id = ? AND message_id = ?;
+UPDATE messages_by_conversation SET content = ?, updated_at = ? WHERE platform_id = ? AND conversation_id = ? AND created_at = ? AND message_id = ?;
+
+-- Soft delete message (batch update)
+UPDATE messages_by_id SET is_deleted = true, updated_at = ? WHERE platform_id = ? AND message_id = ?;
+UPDATE messages_by_conversation SET is_deleted = true, updated_at = ? WHERE platform_id = ? AND conversation_id = ? AND created_at = ? AND message_id = ?;
+
+-- Get latest conversation message
+SELECT * FROM messages_by_conversation WHERE conversation_id = ? LIMIT 1 ALLOW FILTERING;
+```
+
+### Announcement Repository (`announcementRepository.js`)
+
+```sql
+-- Create Announcement Portal
+INSERT INTO announcement_portals_by_id (portal_id, platform_id, name, description, created_by, target_audience, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?);
+
+-- Get Portal by ID
+SELECT * FROM announcement_portals_by_id WHERE platform_id = ? AND portal_id = ?;
+
+-- Delete Portal
+DELETE FROM announcement_portals_by_id WHERE platform_id = ? AND portal_id = ?;
+
+-- Add Member (batch insert)
+INSERT INTO portal_members_by_user (platform_id, user_id, portal_id, role, added_by, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?);
+INSERT INTO portal_members_by_portal (platform_id, portal_id, user_id, role, added_by, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?);
+
+-- Get Portal Member
+SELECT * FROM portal_members_by_portal WHERE platform_id = ? AND portal_id = ? AND user_id = ?;
+
+-- Get Members by Portal
+SELECT * FROM portal_members_by_portal WHERE platform_id = ? AND portal_id = ?;
+
+-- Get Portals by User
+SELECT * FROM portal_members_by_user WHERE platform_id = ? AND user_id = ?;
+
+-- Update Member Role (batch update)
+UPDATE portal_members_by_user SET role = ?, updated_at = ? WHERE platform_id = ? AND user_id = ? AND portal_id = ?;
+UPDATE portal_members_by_portal SET role = ?, updated_at = ? WHERE platform_id = ? AND portal_id = ? AND user_id = ?;
+
+-- Remove Member (batch delete)
+DELETE FROM portal_members_by_user WHERE platform_id = ? AND user_id = ? AND portal_id = ?;
+DELETE FROM portal_members_by_portal WHERE platform_id = ? AND portal_id = ? AND user_id = ?;
+
+-- Create Announcement (batch insert)
+INSERT INTO announcements_by_id (platform_id, announcement_id, portal_id, sender_id, title, content, attachments, target_audience, target_user_ids, published_at, expires_at, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+INSERT INTO announcements_by_portal (platform_id, portal_id, published_at, announcement_id, sender_id, title, content, attachments, target_audience, target_user_ids, expires_at, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+-- Get Announcement by ID
+SELECT * FROM announcements_by_id WHERE platform_id = ? AND announcement_id = ?;
+
+-- Get Announcements by Portal
+SELECT * FROM announcements_by_portal WHERE platform_id = ? AND portal_id = ?;
+
+-- Update Announcement (batch update)
+UPDATE announcements_by_id SET title = ?, content = ?, target_audience = ?, expires_at = ?, updated_at = ? WHERE platform_id = ? AND announcement_id = ?;
+UPDATE announcements_by_portal SET title = ?, content = ?, target_audience = ?, expires_at = ?, updated_at = ? WHERE platform_id = ? AND portal_id = ? AND published_at = ? AND announcement_id = ?;
+
+-- Delete Announcement (batch delete)
+DELETE FROM announcements_by_id WHERE platform_id = ? AND announcement_id = ?;
+DELETE FROM announcements_by_portal WHERE platform_id = ? AND portal_id = ? AND published_at = ? AND announcement_id = ?;
 ```
 
 ---
@@ -319,6 +447,22 @@ The system enforces strict multi-tenant isolation:
 | **Announcements** | `announcement:created`, `announcement:updated`, `announcement:deleted`, `announcement:member-role-updated`, `announcement:member-removed` | Portal real-time events |
 | **Announcement RTC** | `joinAnnouncementRTC`, `leaveAnnouncementRTC`, `announcement:offer`, `announcement:answer`, `announcement:ice-candidate` | WebRTC audio/video in portal |
 | **Screen Sharing** | `screenshare:start`, `screenshare:stop`, `screenshare:offer`, `screenshare:answer`, `screenshare:ice-candidate` | WebRTC screen-share signaling |
+
+---
+
+## 🛠️ Troubleshooting Guide
+
+### 1. Host apps are not receiving each other's messages or announcements
+- **Cause**: The applications are using different `platformId` values.
+- **Solution**: Ensure both host applications pass the exact same `platformId` prop (e.g. `platformId="platform-test1"`) to `<CommunicationWidget />`.
+
+### 2. HTTP DELETE returning `400 platformId is required`
+- **Cause**: HTTP DELETE requests may drop `req.body` in certain browser/server environments.
+- **Solution**: Always pass `platformId` in the request URL query parameters (`?platformId=...`).
+
+### 3. Cassandra `ResponseError: Some partition key parts are missing: platform_id`
+- **Cause**: Querying a table without supplying `platform_id` in the `WHERE` clause.
+- **Solution**: Pass `platform_id` to all database updates, deletes, and SELECT statements.
 
 ---
 

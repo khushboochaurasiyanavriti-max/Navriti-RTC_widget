@@ -1,4 +1,3 @@
-
 import cassandra from "../config/cassandra.js";
 import crypto from "crypto";
 
@@ -6,515 +5,427 @@ import {
     findById,
 } from "./conversationRepository.js";
 
+import {
+    encrypt,
+    decrypt,
+} from "../service/encryptionService.js";
+
 const generateMessageId = () => {
-    return crypto
-        .randomBytes(12)
-        .toString("hex");
+return crypto
+.randomBytes(12)
+.toString("hex");
 };
 
+const requirePlatformId = (
+platformId
+) => {
 
-const serializeAttachment = (attachment) => {
-    if (!attachment) {
-        return null;
-    }
 
-    return JSON.stringify(
-        attachment
+if (!platformId) {
+    throw new Error(
+        "platformId is required"
     );
+}
+
+
 };
 
+const serializeAttachment = (
+attachment
+) => {
+
+
+if (!attachment) {
+    return null;
+}
+
+return JSON.stringify(
+    attachment
+);
+
+
+};
 
 const deserializeAttachment = (
-    attachment
+attachment
 ) => {
-    if (!attachment) {
-        return null;
-    }
 
-    try {
-        return JSON.parse(
-            attachment
-        );
-    } catch {
-        return null;
-    }
+
+if (!attachment) {
+    return null;
+}
+
+try {
+    return JSON.parse(
+        attachment
+    );
+} catch {
+    return null;
+}
+
+
+};
+
+const rowToMessage = (
+row
+) => {
+
+
+if (!row) {
+    return null;
+}
+
+return {
+    _id:
+        row.message_id,
+
+    conversationId:
+        row.conversation_id,
+
+    senderId:
+        row.sender_id,
+
+    content:
+        row.content
+        ? decrypt(
+            row.content,
+            {
+                platformId: row.platform_id,
+                entity: "message",
+                field: "content",
+            }
+        )
+        : "",
+
+    messageType:
+        row.message_type ||
+        "text",
+
+    attachment:
+        deserializeAttachment(
+            row.attachment
+        ),
+
+    status:
+        row.status ||
+        "sent",
+
+    isDeleted:
+        row.is_deleted ||
+        false,
+
+    createdAt:
+        row.created_at,
+
+    updatedAt:
+        row.updated_at,
+
+    platformId:
+        row.platform_id,
 };
 
 
-const rowToMessage = (row) => {
-    if (!row) {
-        return null;
-    }
-
-    return {
-        _id:
-            row.message_id,
-
-        conversationId:
-            row.conversation_id,
-
-        senderId:
-            row.sender_id,
-
-        content:
-            row.content || "",
-
-        messageType:
-            row.message_type ||
-            "text",
-
-        attachment:
-            deserializeAttachment(
-                row.attachment
-            ),
-
-        status:
-            row.status ||
-            "sent",
-
-        isDeleted:
-            row.is_deleted ||
-            false,
-
-        createdAt:
-            row.created_at,
-
-        updatedAt:
-            row.updated_at,
-    };
 };
 
-
-/*
- * ---------------------------------------------------------
- * Verify that the conversation belongs to the platform.
- *
- * This is the central isolation check used by every message
- * operation.
- * ---------------------------------------------------------
- */
+/* =====================================================
+PLATFORM CONVERSATION VALIDATION
+===================================================== */
 
 const getPlatformConversation = async ({
-    conversationId,
-    platformId,
+conversationId,
+platformId,
 }) => {
 
-    if (
-        !conversationId ||
-        !platformId
-    ) {
-        return null;
-    }
+
+if (
+    !conversationId ||
+    !platformId
+) {
+    return null;
+}
 
 
-    const conversation =
-        await findById(
-            conversationId,
-            platformId,
-        );
+const conversation =
+    await findById(
+        conversationId,
+        platformId,
+    );
 
 
-    if (!conversation) {
-        return null;
-    }
+return conversation || null;
 
 
-    return conversation;
 };
 
-
-/*
- * ---------------------------------------------------------
- * Create Message
- * ---------------------------------------------------------
- */
+/* =====================================================
+CREATE MESSAGE
+===================================================== */
 
 export const createMessage = async ({
-    conversationId,
-    platformId,
-    senderId,
-    content = "",
-    messageType = "text",
-    attachment = null,
-    status = "sent",
+conversationId,
+platformId,
+senderId,
+content = "",
+messageType = "text",
+attachment = null,
+status = "sent",
 }) => {
 
-    /*
-     * Platform isolation validation.
-     */
 
-    const conversation =
-        await getPlatformConversation({
-            conversationId,
-            platformId,
-        });
+requirePlatformId(platformId);
 
 
-    if (!conversation) {
-        return null;
-    }
+const conversation =
+    await getPlatformConversation({
+        conversationId,
+        platformId,
+    });
 
 
-    const messageId =
-        generateMessageId();
-
-    const now =
-        new Date();
+if (!conversation) {
+    return null;
+}
 
 
-    const attachmentJson =
-        serializeAttachment(
-            attachment
-        );
+const messageId =
+    generateMessageId();
+
+const now =
+    new Date();
 
 
-    await cassandra.batch(
-        [
-            {
-                query: `
-                    INSERT INTO messages_by_conversation (
-                        platform_id,
-                        conversation_id,
-                        created_at,
-                        message_id,
-                        sender_id,
-                        content,
-                        message_type,
-                        attachment,
-                        status,
-                        is_deleted,
-                        updated_at
-                    )
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                `,
-
-                params: [
-                    platformId,
-                    conversationId,
-                    now,
-                    messageId,
-                    senderId,
-                    content,
-                    messageType,
-                    attachmentJson,
-                    status,
-                    false,
-                    now,
-                ],
-            },
-
-            {
-                query: `
-                    INSERT INTO messages_by_id (
-                        platform_id,
-                        message_id,
-                        conversation_id,
-                        created_at,
-                        sender_id,
-                        content,
-                        message_type,
-                        attachment,
-                        status,
-                        is_deleted,
-                        updated_at
-                    )
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                `,
-
-                params: [
-                    platformId,
-                    messageId,
-                    conversationId,
-                    now,
-                    senderId,
-                    content,
-                    messageType,
-                    attachmentJson,
-                    status,
-                    false,
-                    now,
-                ],
-            },
-        ],
-
+const attachmentJson =
+    serializeAttachment(
+        attachment
+    );
+const encryptedContent =
+    encrypt(
+        content,
         {
-            prepare: true,
+            platformId,
+            entity: "message",
+            field: "content",
         }
     );
 
+await cassandra.batch(
+    [
+        {
+            query: `
+                INSERT INTO messages_by_conversation (
+                    platform_id,
+                    conversation_id,
+                    created_at,
+                    message_id,
+                    sender_id,
+                    content,
+                    message_type,
+                    attachment,
+                    status,
+                    is_deleted,
+                    updated_at
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            `,
 
-    return {
-        _id:
-            messageId,
+            params: [
+                platformId,
+                conversationId,
+                now,
+                messageId,
+                senderId,
+                encryptedContent,
+                messageType,
+                attachmentJson,
+                status,
+                false,
+                now,
+            ],
+        },
 
-        conversationId,
+        {
+            query: `
+                INSERT INTO messages_by_id (
+                    platform_id,
+                    message_id,
+                    conversation_id,
+                    created_at,
+                    sender_id,
+                    content,
+                    message_type,
+                    attachment,
+                    status,
+                    is_deleted,
+                    updated_at
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            `,
 
-        senderId,
+            params: [
+                platformId,
+                messageId,
+                conversationId,
+                now,
+                senderId,
+                encryptedContent,
+                messageType,
+                attachmentJson,
+                status,
+                false,
+                now,
+            ],
+        },
+    ],
 
-        content,
+    {
+        prepare: true,
+    }
+);
 
-        messageType,
 
-        attachment,
+return {
+    _id:
+        messageId,
 
-        status,
+    conversationId,
 
-        isDeleted:
-            false,
+    platformId,
 
-        createdAt:
-            now,
+    senderId,
 
-        updatedAt:
-            now,
-    };
+    content,
+
+    messageType,
+
+    attachment,
+
+    status,
+
+    isDeleted:
+        false,
+
+    createdAt:
+        now,
+
+    updatedAt:
+        now,
 };
 
 
-/*
- * ---------------------------------------------------------
- * Get Messages
- * ---------------------------------------------------------
- */
+};
+
+/* =====================================================
+GET MESSAGES
+===================================================== */
 
 export const getMessages = async ({
-    conversationId,
-    platformId,
-    limit = 100,
-    before = null,
+conversationId,
+platformId,
+limit = 100,
+before = null,
 }) => {
 
-    /*
-     * Verify conversation ownership before reading messages.
-     */
 
-    const conversation =
-        await getPlatformConversation({
-            conversationId,
-            platformId,
-        });
+requirePlatformId(platformId);
 
 
-    if (!conversation) {
-        return null;
-    }
-
-
-    let query = `
-        SELECT *
-        FROM messages_by_conversation
-        WHERE conversation_id = ?
-    `;
-
-
-    const params = [
+const conversation =
+    await getPlatformConversation({
         conversationId,
-    ];
+        platformId,
+    });
 
 
-    if (before) {
-
-        query += `
-            AND created_at < ?
-        `;
+if (!conversation) {
+    return null;
+}
 
 
-        params.push(
-            before
-        );
-    }
+let query = `
+    SELECT *
+    FROM messages_by_conversation
+    WHERE platform_id = ?
+    AND conversation_id = ?
+`;
 
+
+const params = [
+    platformId,
+    conversationId,
+];
+
+
+if (before) {
 
     query += `
-        LIMIT ?
-        ALLOW FILTERING
+        AND created_at < ?
     `;
 
-
     params.push(
-        Number(limit)
+        before
+    );
+}
+
+
+query += `
+    LIMIT ?
+`;
+
+
+params.push(
+    Number(limit)
+);
+
+
+const result =
+    await cassandra.execute(
+        query,
+        params,
+        {
+            prepare: true,
+        }
     );
 
 
-    const result =
-        await cassandra.execute(
-            query,
-            params,
-            {
-                prepare: true,
-            }
-        );
+return result.rows
+    .map(
+        rowToMessage
+    )
+    .reverse();
 
 
-    /*
-     * Cassandra returns newest → oldest.
-     * Frontend expects oldest → newest.
-     */
-
-    return result.rows
-        .map(
-            rowToMessage
-        )
-        .reverse();
 };
 
-
-/*
- * ---------------------------------------------------------
- * Find Message By ID
- *
- * This is platform protected.
- *
- * A message ID alone is not sufficient to retrieve data.
- * ---------------------------------------------------------
- */
+/* =====================================================
+FIND MESSAGE BY ID
+===================================================== */
 
 export const findMessageById = async ({
-    messageId,
-    platformId,
+messageId,
+platformId,
 }) => {
 
-    if (
-        !messageId ||
-        !platformId
-    ) {
-        return null;
-    }
+
+requirePlatformId(platformId);
 
 
-    const result =
-        await cassandra.execute(
-            `
-                SELECT *
-                FROM messages_by_id
-                WHERE message_id = ?
-                ALLOW FILTERING
-            `,
-            [
-                messageId,
-            ],
-            {
-                prepare: true,
-            }
-        );
+if (!messageId) {
+    return null;
+}
 
 
-    const message =
-        rowToMessage(
-            result.rows[0]
-        );
+const result =
+    await cassandra.execute(
+        `
+            SELECT *
+            FROM messages_by_id
+            WHERE platform_id = ?
+            AND message_id = ?
+        `,
 
-
-    if (!message) {
-        return null;
-    }
-
-
-    /*
-     * Verify that the message's conversation
-     * belongs to the requested platform.
-     */
-
-    const conversation =
-        await getPlatformConversation({
-            conversationId:
-                message.conversationId,
-
-            platformId,
-        });
-
-
-    if (!conversation) {
-        return null;
-    }
-
-
-    return message;
-};
-
-
-/*
- * ---------------------------------------------------------
- * Update Message Content
- * ---------------------------------------------------------
- */
-
-export const updateMessageContent = async ({
-    messageId,
-    platformId,
-    senderId,
-    content,
-}) => {
-
-    /*
-     * findMessageById already validates platform ownership.
-     */
-
-    const message =
-        await findMessageById({
-            messageId,
-            platformId,
-        });
-
-
-    if (!message) {
-        return null;
-    }
-
-
-    if (
-        message.senderId !==
-        senderId
-    ) {
-        return null;
-    }
-
-
-    const updatedAt =
-        new Date();
-
-
-    await cassandra.batch(
         [
-            {
-                query: `
-                    UPDATE messages_by_id
-                    SET
-                        content = ?,
-                        updated_at = ?
-                    WHERE platform_id = ?
-                        AND message_id = ?
-                `,
-
-                params: [
-                    content,
-                    updatedAt,
-                    platformId,
-                    messageId,
-                ],
-            },
-
-            {
-                query: `
-                    UPDATE messages_by_conversation
-                    SET
-                        content = ?,
-                        updated_at = ?
-                    WHERE platform_id = ?
-                        AND conversation_id = ?
-                        AND created_at = ?
-                        AND message_id = ?
-                `,
-
-                params: [
-                    content,
-                    updatedAt,
-                    platformId,
-                    message.conversationId,
-                    message.createdAt,
-                    messageId,
-                ],
-            },
+            platformId,
+            messageId,
         ],
 
         {
@@ -523,164 +434,300 @@ export const updateMessageContent = async ({
     );
 
 
-    return {
-        ...message,
-
-        content,
-
-        updatedAt,
-    };
-};
-
-
-/*
- * ---------------------------------------------------------
- * Soft Delete Message
- * ---------------------------------------------------------
- */
-
-export const softDeleteMessage = async ({
-    messageId,
-    platformId,
-    senderId,
-}) => {
-
-    /*
-     * findMessageById validates
-     * message → conversation → platform ownership.
-     */
-
-    const message =
-        await findMessageById({
-            messageId,
-            platformId,
-        });
-
-
-    if (!message) {
-        return null;
-    }
-
-
-    if (
-        message.senderId !==
-        senderId
-    ) {
-        return null;
-    }
-
-
-    const updatedAt =
-        new Date();
-
-
-    await cassandra.batch(
-        [
-            {
-                query: `
-                    UPDATE messages_by_id
-                    SET
-                        is_deleted = true,
-                        updated_at = ?
-                    WHERE platform_id = ?
-                        AND message_id = ?
-                `,
-
-                params: [
-                    updatedAt,
-                    platformId,
-                    messageId,
-                ],
-            },
-
-            {
-                query: `
-                    UPDATE messages_by_conversation
-                    SET
-                        is_deleted = true,
-                        updated_at = ?
-                    WHERE platform_id = ?
-                        AND conversation_id = ?
-                        AND created_at = ?
-                        AND message_id = ?
-                `,
-
-                params: [
-                    updatedAt,
-                    platformId,
-                    message.conversationId,
-                    message.createdAt,
-                    messageId,
-                ],
-            },
-        ],
-
-        {
-            prepare: true,
-        }
-    );
-
-
-    return {
-        ...message,
-
-        isDeleted:
-            true,
-
-        updatedAt,
-    };
-};
-
-
-/*
- * ---------------------------------------------------------
- * Get Latest Message
- * ---------------------------------------------------------
- */
-
-export const getLatestMessage = async ({
-    conversationId,
-    platformId,
-}) => {
-
-    /*
-     * Verify conversation belongs to platform.
-     */
-
-    const conversation =
-        await getPlatformConversation({
-            conversationId,
-            platformId,
-        });
-
-
-    if (!conversation) {
-        return null;
-    }
-
-
-    const result =
-        await cassandra.execute(
-            `
-                SELECT *
-                FROM messages_by_conversation
-                WHERE conversation_id = ?
-                LIMIT 1
-                ALLOW FILTERING
-            `,
-
-            [
-                conversationId,
-            ],
-
-            {
-                prepare: true,
-            }
-        );
-
-
-    return rowToMessage(
+const message =
+    rowToMessage(
         result.rows[0]
     );
+
+
+if (!message) {
+    return null;
+}
+
+
+/*
+ * Extra validation:
+ * message conversation must also exist
+ * under the same platform.
+ */
+
+const conversation =
+    await getPlatformConversation({
+        conversationId:
+            message.conversationId,
+
+        platformId,
+    });
+
+
+if (!conversation) {
+    return null;
+}
+
+
+return message;
+
+
 };
 
+/* =====================================================
+UPDATE MESSAGE CONTENT
+===================================================== */
+
+export const updateMessageContent = async ({
+messageId,
+platformId,
+senderId,
+content,
+}) => {
+
+
+requirePlatformId(platformId);
+
+
+const message =
+    await findMessageById({
+        messageId,
+        platformId,
+    });
+
+
+if (!message) {
+    return null;
+}
+
+
+if (
+    message.senderId !==
+    senderId
+) {
+    return null;
+}
+
+
+const updatedAt =
+    new Date();
+
+const encryptedContent = encrypt(
+    content,
+    {
+        platformId,
+        entity: "message",
+        field: "content",
+    }
+);
+
+
+await cassandra.batch(
+    [
+        {
+            query: `
+                UPDATE messages_by_id
+                SET
+                    content = ?,
+                    updated_at = ?
+                WHERE
+                    platform_id = ?
+                    AND message_id = ?
+            `,
+
+            params: [
+                encryptedContent,
+                updatedAt,
+                platformId,
+                messageId,
+            ],
+        },
+
+        {
+            query: `
+                UPDATE messages_by_conversation
+                SET
+                    content = ?,
+                    updated_at = ?
+                WHERE
+                    platform_id = ?
+                    AND conversation_id = ?
+                    AND created_at = ?
+                    AND message_id = ?
+            `,
+
+            params: [
+                encryptedContent,
+                updatedAt,
+                platformId,
+                message.conversationId,
+                message.createdAt,
+                messageId,
+            ],
+        },
+    ],
+
+    {
+        prepare: true,
+    }
+);
+
+
+return {
+    ...message,
+
+    content,
+
+    updatedAt,
+};
+
+
+};
+
+/* =====================================================
+SOFT DELETE MESSAGE
+===================================================== */
+
+export const softDeleteMessage = async ({
+messageId,
+platformId,
+senderId,
+}) => {
+
+
+requirePlatformId(platformId);
+
+
+const message =
+    await findMessageById({
+        messageId,
+        platformId,
+    });
+
+
+if (!message) {
+    return null;
+}
+
+
+if (
+    message.senderId !==
+    senderId
+) {
+    return null;
+}
+
+
+const updatedAt =
+    new Date();
+
+
+await cassandra.batch(
+    [
+        {
+            query: `
+                UPDATE messages_by_id
+                SET
+                    is_deleted = true,
+                    updated_at = ?
+                WHERE
+                    platform_id = ?
+                    AND message_id = ?
+            `,
+
+            params: [
+                updatedAt,
+                platformId,
+                messageId,
+            ],
+        },
+
+        {
+            query: `
+                UPDATE messages_by_conversation
+                SET
+                    is_deleted = true,
+                    updated_at = ?
+                WHERE
+                    platform_id = ?
+                    AND conversation_id = ?
+                    AND created_at = ?
+                    AND message_id = ?
+            `,
+
+            params: [
+                updatedAt,
+                platformId,
+                message.conversationId,
+                message.createdAt,
+                messageId,
+            ],
+        },
+    ],
+
+    {
+        prepare: true,
+    }
+);
+
+
+return {
+    ...message,
+
+    isDeleted:
+        true,
+
+    updatedAt,
+};
+
+
+};
+
+/* =====================================================
+GET LATEST MESSAGE
+===================================================== */
+
+export const getLatestMessage = async ({
+conversationId,
+platformId,
+}) => {
+
+
+requirePlatformId(platformId);
+
+
+const conversation =
+    await getPlatformConversation({
+        conversationId,
+        platformId,
+    });
+
+
+if (!conversation) {
+    return null;
+}
+
+
+const result =
+    await cassandra.execute(
+        `
+            SELECT *
+            FROM messages_by_conversation
+            WHERE platform_id = ?
+            AND conversation_id = ?
+            LIMIT 1
+        `,
+
+        [
+            platformId,
+            conversationId,
+        ],
+
+        {
+            prepare: true,
+        }
+    );
+
+
+return rowToMessage(
+    result.rows[0]
+);
+
+
+};

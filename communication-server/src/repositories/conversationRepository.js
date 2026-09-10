@@ -1,5 +1,9 @@
 import cassandra from "../config/cassandra.js";
 import crypto from "crypto";
+import { 
+    encrypt,
+    decrypt,
+} from "../service/encryptionService.js";
 
 const generateConversationId = () => {
     return crypto.randomBytes(12).toString("hex");
@@ -38,6 +42,15 @@ export const createConversation = async ({
 
     const conversationId = generateConversationId();
     const now = new Date();
+    const encryptedDisplayName=
+        encrypt(
+            displayName,
+            {
+                platformId,
+                entity:"conversation",
+                field:"displayName",
+            }
+        );
 
     const queries = [
         {
@@ -57,7 +70,7 @@ export const createConversation = async ({
                 conversationId,
                 platformId,
                 type,
-                displayName,
+                encryptedDisplayName,
                 participantKey,
                 now,
                 now,
@@ -84,7 +97,7 @@ export const createConversation = async ({
                 conversationId,
                 platformId,
                 type,
-                displayName,
+                encryptedDisplayName,
                 now,
                 now,
             ],
@@ -237,7 +250,17 @@ export const findById = async (conversationId,platformId) => {
         return null;
     if (platformId && row.platform_id !== platformId) 
         return null;
-    return row;
+    return {
+        ...row,
+        display_name: decrypt(
+            row.display_name,
+            {
+                platformId: row.platform_id,
+                entity: "conversation",
+                field: "displayName",
+            }
+        ),
+    };
 };
 
 export const assertConversationPlatform = async (conversationId, platformId) => {
@@ -280,6 +303,15 @@ export const createGroup = async ({
 
     const conversationId = generateConversationId();
     const now = new Date();
+    const encryptedDisplayName=
+        encrypt(
+            displayName,
+            {
+                platformId,
+                entity:"conversation",
+                field:"displayName",
+            }
+        );
 
     await cassandra.execute(
         `
@@ -298,7 +330,7 @@ export const createGroup = async ({
             conversationId,
             platformId,
             "group",
-            displayName,
+            encryptedDisplayName,
             null,
             now,
             now,

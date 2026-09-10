@@ -1,5 +1,8 @@
 import cassandra from "../config/cassandra.js";
-
+import {
+    encrypt,
+    decrypt,
+} from "../service/encryptionService.js";
 
 /* =====================================================
    HELPERS
@@ -82,10 +85,26 @@ const rowToPortal = (row) => {
             row.portal_id,
 
         name:
-            row.name,
+            row.name
+            ?decrypt(
+                row.name,
+                {
+                    platformId:row.platform_id,
+                    entity:"portal",
+                    field:"name",
+                }
+            ):"",
 
         description:
-            row.description || "",
+            row.description
+            ?decrypt(
+                row.description,
+                {
+                    platformId:row.platform_id,
+                    entity:"portal",
+                    field:"description",
+                }
+            ): "",
 
         createdBy:
             row.created_by,
@@ -151,10 +170,24 @@ const rowToAnnouncement = (row) => {
             row.sender_id,
 
         title:
-            row.title,
+            row.title
+            ?decrypt(row.title,
+            {
+                platformId:row.platform_id,
+                entity:"announcement",
+                field:"title",
+
+            }):"",
 
         content:
-            row.content,
+            row.content
+            ?decrypt(row.content,
+            {
+                platformId:row.platform_id,
+                entity:"announcement",
+                field:"content",
+
+            }):"",
 
         attachments:
             deserializeAttachments(
@@ -199,6 +232,21 @@ export const createPortal = async ({
     updatedAt = createdAt,
     platformId,
 }) => {
+    const encryptedName =
+        encrypt(name,
+            {
+                platformId,
+                entity:"portal",
+                field:"name",
+            }
+        );
+    
+    const encryptedDescription =
+        encrypt(description,{
+            platformId,
+            entity:"portal",
+            field:"description",
+        });
 
     await cassandra.execute(
         `
@@ -217,8 +265,8 @@ export const createPortal = async ({
         [
             portalId,
             platformId,
-            name,
-            description || "",
+            encryptedName,
+            encryptedDescription || "",
             createdBy,
             targetAudience || "all",
             createdAt,
@@ -833,7 +881,27 @@ export const createAnnouncement = async ({
                 ),
             ]
             : [];
+    
 
+    const encryptedTitle =
+            encrypt(
+                title,
+                {
+                    platformId,
+                    entity:"announcement",
+                    field:"title",
+                }
+            );
+    
+    const encryptedContent =
+            encrypt(
+                content,
+                {
+                    platformId,
+                    entity:"announcement",
+                    field:"content",
+                }
+            );
 
     /*
      * Insert into both Cassandra tables.
@@ -868,8 +936,8 @@ export const createAnnouncement = async ({
                     announcementId,
                     portalId,
                     senderId,
-                    title,
-                    content,
+                    encryptedTitle,
+                    encryptedContent,
                     attachmentsJson,
                     targetAudience,
                     targetUserIdsArray,
@@ -906,8 +974,8 @@ export const createAnnouncement = async ({
                     publishedAt,
                     announcementId,
                     senderId,
-                    title,
-                    content,
+                    encryptedTitle,
+                    encryptedContent,
                     attachmentsJson,
                     targetAudience,
                     targetUserIdsArray,
@@ -1120,7 +1188,25 @@ export const updateAnnouncement =
                 existing.targetUserIds ||
                 []
             );
-
+        const encryptedNewTitle =
+                encrypt(
+                    newTitle,
+                    {
+                        platformId,
+                        entity:"announcement",
+                        field:"title",
+                    }
+                );
+    
+        const encryptedNewContent =
+                encrypt(
+                    newContent,
+                    {
+                        platformId,
+                        entity:"announcement",
+                        field:"content",
+                    }
+                );
 
         if (platId) {
             await cassandra.batch(
@@ -1138,8 +1224,8 @@ export const updateAnnouncement =
                         `,
 
                         params: [
-                            newTitle,
-                            newContent,
+                            encryptedNewTitle,
+                            encryptedNewContent,
                             newTargetAudience,
                             newExpiresAt,
                             updatedAt,
@@ -1163,8 +1249,8 @@ export const updateAnnouncement =
                         `,
 
                         params: [
-                            newTitle,
-                            newContent,
+                            encryptedNewTitle,
+                            encryptedNewContent,
                             newTargetAudience,
                             newExpiresAt,
                             updatedAt,
@@ -1194,8 +1280,8 @@ export const updateAnnouncement =
                         `,
 
                         params: [
-                            newTitle,
-                            newContent,
+                            encryptedNewTitle,
+                            encryptedNewContent,
                             newTargetAudience,
                             newExpiresAt,
                             updatedAt,
@@ -1217,8 +1303,8 @@ export const updateAnnouncement =
                         `,
 
                         params: [
-                            newTitle,
-                            newContent,
+                            encryptedNewTitle,
+                            encryptedNewContent,
                             newTargetAudience,
                             newExpiresAt,
                             updatedAt,
@@ -1357,4 +1443,4 @@ export const deleteAnnouncement =
 
 
         return announcement;
-    };
+    };
