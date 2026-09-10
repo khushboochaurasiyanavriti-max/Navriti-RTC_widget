@@ -4,6 +4,8 @@ import app from './app.js';
 import dotenv from 'dotenv';
 
 import  {connectCassandra } from "./config/cassandra.js";
+
+import { connectCloudinary } from "./config/cloudinary.js";
 import socketHandler from './socket/socketHandler.js';
 import {Server} from "socket.io";
 import {
@@ -36,6 +38,7 @@ setAnnouncementSocket(io);
 setConversationSocket(io);
 socketHandler(io);
 await connectCassandra();
+await connectCloudinary();
 
 const PORT = process.env.PORT || 5000;
 httpServer.listen(PORT, () => {

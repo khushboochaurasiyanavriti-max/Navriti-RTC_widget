@@ -1,5 +1,8 @@
 import { useEffect, useState } from "react";
 import "./MessageItem.css";
+
+import { downloadFile } from "../../services/messageService";
+
 const formatFileSize = (bytes = 0) => {
     if (bytes < 1024) {
         return `${bytes} B`;
@@ -11,6 +14,7 @@ const formatFileSize = (bytes = 0) => {
 
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 };
+
 const getFileIcon = (fileType) => {
     if (!fileType) {
         return "📎";
@@ -62,7 +66,12 @@ function MessageItem({
     const [editContent, setEditContent] =
         useState(message.content);
 
-    
+    const [imageUrl, setImageUrl] =
+        useState(null);
+
+    const [isLoadingImage, setIsLoadingImage] =
+        useState(false);
+
     /*
      * Keep edit input synchronized if
      * another client edits this message.
@@ -95,11 +104,231 @@ function MessageItem({
 
 
     /*
+     * Load encrypted image through backend.
+     *
+     * The backend decrypts the file before
+     * returning the original image bytes.
+     */
+
+    useEffect(() => {
+        let objectUrl = null;
+
+        const loadImage = async () => {
+            const attachment =
+                message.attachment;
+
+            if (
+                message.messageType !== "file" ||
+                !attachment ||
+                !attachment.fileType?.startsWith(
+                    "image/"
+                ) ||
+                !attachment.publicId
+            ) {
+                setImageUrl(null);
+                return;
+            }
+
+            try {
+                setIsLoadingImage(true);
+
+                const blob =
+                    await downloadFile({
+                        publicId:
+                            attachment.publicId,
+
+                        platformId:
+                            message.platformId,
+
+                        fileType:
+                            attachment.fileType,
+
+                        fileName:
+                            attachment.fileName,
+                        resourceType: 
+                            attachment.resourceType || "raw",
+                    });
+
+                objectUrl =
+                    URL.createObjectURL(blob);
+
+                setImageUrl(objectUrl);
+            } catch (error) {
+                console.error(
+                    "Failed to load encrypted image:",
+                    error
+                );
+
+                setImageUrl(null);
+            } finally {
+                setIsLoadingImage(false);
+            }
+        };
+
+        loadImage();
+
+        return () => {
+            if (objectUrl) {
+                URL.revokeObjectURL(
+                    objectUrl
+                );
+            }
+        };
+    }, [
+        message.messageType,
+        message.platformId,
+        message.attachment?.publicId,
+        message.attachment?.fileType,
+        message.attachment?.fileName,
+        message.attachment?.resourceType,
+    ]);
+
+
+    /*
+     * Open encrypted file.
+     *
+     * Backend downloads the encrypted
+     * Cloudinary file, decrypts it and
+     * returns the original file.
+     */
+
+    const handleOpenFile = async () => {
+        try {
+            const attachment =
+                message.attachment;
+
+            if (
+                !attachment?.publicId
+            ) {
+                console.error(
+                    "File publicId is missing"
+                );
+                return;
+            }
+
+            const blob =
+                await downloadFile({
+                    publicId:
+                        attachment.publicId,
+
+                    platformId:
+                        message.platformId,
+
+                    fileType:
+                        attachment.fileType,
+
+                    fileName:
+                        attachment.fileName,
+                    resourceType:
+                        attachment.resourceType,
+                });
+
+            const url =
+                URL.createObjectURL(blob);
+
+            window.open(
+                url,
+                "_blank"
+            );
+
+            setTimeout(() => {
+                URL.revokeObjectURL(url);
+            }, 60000);
+
+        } catch (error) {
+            console.error(
+                "Failed to open encrypted file:",
+                error
+            );
+        }
+    };
+
+
+    /*
+     * Download encrypted file.
+     *
+     * Backend decrypts it first and
+     * browser downloads the original file.
+     */
+
+    const handleDownloadFile =
+        async () => {
+            try {
+                const attachment =
+                    message.attachment;
+
+                if (
+                    !attachment?.publicId
+                ) {
+                    console.error(
+                        "File publicId is missing"
+                    );
+                    return;
+                }
+
+                const blob =
+                    await downloadFile({
+                        publicId:
+                            attachment.publicId,
+
+                        platformId:
+                            message.platformId,
+
+                        fileType:
+                            attachment.fileType,
+
+                        fileName:
+                            attachment.fileName,
+                        resourceType:
+                            attachment.resourceType,
+                    });
+
+                const url =
+                    URL.createObjectURL(blob);
+
+                const link =
+                    document.createElement(
+                        "a"
+                    );
+
+                link.href = url;
+
+                link.download =
+                    attachment.fileName ||
+                    "download";
+
+                document.body.appendChild(
+                    link
+                );
+
+                link.click();
+
+                link.remove();
+
+                setTimeout(() => {
+                    URL.revokeObjectURL(
+                        url
+                    );
+                }, 1000);
+
+            } catch (error) {
+                console.error(
+                    "Failed to download encrypted file:",
+                    error
+                );
+            }
+        };
+
+
+    /*
      * Start editing
      */
 
     const handleEdit = () => {
-        setEditContent(message.content);
+        setEditContent(
+            message.content
+        );
+
         setIsEditing(true);
     };
 
@@ -134,7 +363,10 @@ function MessageItem({
      */
 
     const handleCancelEdit = () => {
-        setEditContent(message.content);
+        setEditContent(
+            message.content
+        );
+
         setIsEditing(false);
     };
 
@@ -171,6 +403,7 @@ function MessageItem({
                             {time}
                         </span>
                     </>
+
                 ) : isEditing ? (
 
                     /* Edit mode */
@@ -231,27 +464,55 @@ function MessageItem({
                     /* Normal message */
 
                     <>
-                        {message.messageType === "file" ? 
-                        (
+                        {message.messageType === "file" ? (
 
-                            message.attachment?.fileType?.startsWith("image/") ? (
+                            message.attachment?.fileType?.startsWith(
+                                "image/"
+                            ) ? (
 
                                 <div className="rtc-image-message">
 
-                                    <a
-                                        href={message.attachment.fileUrl}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                    >
-                                        <img
-                                            src={message.attachment.fileUrl}
-                                            alt={message.attachment.fileName}
-                                            className="rtc-image-preview"
-                                        />
-                                    </a>
+                                    {isLoadingImage ? (
+                                        <div>
+                                            Loading image...
+                                        </div>
+                                    ) : imageUrl ? (
+
+                                        <button
+                                            type="button"
+                                            onClick={
+                                                handleOpenFile
+                                            }
+                                            style={{
+                                                border: "none",
+                                                padding: 0,
+                                                background: "none",
+                                                cursor: "pointer",
+                                            }}
+                                        >
+                                            <img
+                                                src={imageUrl}
+                                                alt={
+                                                    message
+                                                        .attachment
+                                                        .fileName
+                                                }
+                                                className="rtc-image-preview"
+                                            />
+                                        </button>
+
+                                    ) : (
+                                        <div>
+                                            Unable to load image
+                                        </div>
+                                    )}
 
                                     <div className="rtc-image-name">
-                                        {message.attachment.fileName}
+                                        {
+                                            message
+                                                .attachment
+                                                .fileName
+                                        }
                                     </div>
 
                                 </div>
@@ -264,19 +525,27 @@ function MessageItem({
 
                                         <span className="rtc-file-icon">
                                             {getFileIcon(
-                                                message.attachment?.fileType
+                                                message
+                                                    .attachment
+                                                    ?.fileType
                                             )}
                                         </span>
 
                                         <div className="rtc-file-details">
 
                                             <div className="rtc-file-name">
-                                                {message.attachment?.fileName}
+                                                {
+                                                    message
+                                                        .attachment
+                                                        ?.fileName
+                                                }
                                             </div>
 
                                             <div className="rtc-file-size">
                                                 {formatFileSize(
-                                                    message.attachment?.fileSize
+                                                    message
+                                                        .attachment
+                                                        ?.fileSize
                                                 )}
                                             </div>
 
@@ -286,26 +555,29 @@ function MessageItem({
 
                                     <div className="rtc-file-actions">
 
-                                        <a
-                                            href={message.attachment?.fileUrl}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
+                                        <button
+                                            type="button"
+                                            onClick={
+                                                handleOpenFile
+                                            }
                                             className="rtc-file-open"
                                             aria-label="Open file"
                                             title="Open file"
                                         >
-                                                ↗
-                                        </a>
+                                            ↗
+                                        </button>
 
-                                        <a
-                                            href={message.attachment?.fileUrl}
-                                            download={message.attachment?.fileName}
+                                        <button
+                                            type="button"
+                                            onClick={
+                                                handleDownloadFile
+                                            }
                                             className="rtc-file-download"
                                             aria-label="Download file"
                                             title="Download file"
                                         >
                                             ↓
-                                        </a>
+                                        </button>
 
                                     </div>
 
@@ -314,9 +586,11 @@ function MessageItem({
                             )
 
                         ) : (
+
                             <div>
                                 {message.content}
                             </div>
+
                         )}
 
                         <span className="rtc-message-time">
@@ -330,7 +604,9 @@ function MessageItem({
                                     <button
                                         type="button"
                                         className="rtc-edit-button"
-                                        onClick={handleEdit}
+                                        onClick={
+                                            handleEdit
+                                        }
                                         aria-label="Edit message"
                                         title="Edit message"
                                     >
@@ -342,7 +618,9 @@ function MessageItem({
                                     type="button"
                                     className="rtc-delete-button"
                                     onClick={() =>
-                                        onDeleteMessage(message._id)
+                                        onDeleteMessage(
+                                            message._id
+                                        )
                                     }
                                     aria-label="Delete message"
                                     title="Delete message"
@@ -352,9 +630,13 @@ function MessageItem({
 
                             </div>
                         )}
+
                     </>
+
                 )}
+
             </div>
+
         </div>
     );
 }

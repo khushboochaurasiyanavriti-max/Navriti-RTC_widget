@@ -1,28 +1,43 @@
-
 import express from "express";
 
 import upload
-    from "../middleware/uploadMiddleware.js";
+from "../middleware/uploadMiddleware.js";
 
 import cloudinary
-    from "../config/cloudinary.js";
+from "../config/cloudinary.js";
 
-
+import { 
+    encryptFile,
+    decryptFile,
+} from "../service/fileEncryptionService.js";
 const router =
-    express.Router();
-
+express.Router();
 
 /*
- * ---------------------------------------------------------
- * Platform Isolation Middleware
- * ---------------------------------------------------------
- */
 
-const requirePlatform = (
-    req,
-    res,
-    next
+* ---
+* Platform Isolation Middleware
+* ---
+*
+* platformId can come from:
+*
+* * JSON body
+* * multipart/form-data body
+* * query params
+*
+* The validated platform ID is stored in
+* req.platformId.
+* ---
+
+*/
+
+const requirePlatform =
+(
+req,
+res,
+next
 ) => {
+
 
     const platformId =
         req.body?.platformId ||
@@ -31,11 +46,14 @@ const requirePlatform = (
 
     if (!platformId) {
 
-        return res.status(400).json({
-            message:
-                "platformId is required",
-        });
+        return res
+            .status(400)
+            .json({
 
+                message:
+                    "platformId is required",
+
+            });
     }
 
 
@@ -48,71 +66,88 @@ const requirePlatform = (
 
 
 /*
- * ---------------------------------------------------------
- * Upload File
- * ---------------------------------------------------------
- */
+
+* ---
+* Upload File
+* ---
+*
+* multer must run before requirePlatform
+* because multipart form-data fields must
+* be parsed before req.body.platformId
+* is available.
+* ---
+
+*/
 
 router.post(
-    "/upload",
-
-    upload.single(
-        "file"
-    ),
-
-    requirePlatform,
-
-    async (
-        req,
-        res
-    ) => {
-
-        try {
-
-            const platformId =
-                req.platformId;
+"/upload",
 
 
-            console.log(
-                "UPLOAD PLATFORM:",
-                platformId
-            );
+upload.single(
+    "file"
+),
+
+requirePlatform,
+
+async (
+    req,
+    res
+) => {
+
+    try {
+
+        const platformId =
+            req.platformId;
 
 
-            if (!req.file) {
+        if (!req.file) {
 
-                return res.status(400).json({
+            return res
+                .status(400)
+                .json({
+
                     message:
                         "No file uploaded",
+
                 });
-
+        }
+        const encryptedFile = encryptFile(
+            req.file.buffer,
+            {
+                platformId,
+                entity: "file",
             }
+        );
 
 
-            /*
-             * Platform-specific Cloudinary folder.
-             *
-             * Example:
-             *
-             * communication-widget/platform-A/
-             * communication-widget/platform-B/
-             */
+        /*
+         * Platform-specific Cloudinary folder.
+         */
 
-            const uploadResult =
-                await new Promise(
-                    (
-                        resolve,
-                        reject
-                    ) => {
+        const folder =
+            `communication-widget/${platformId}`;
 
-                        const uploadStream =
-                            cloudinary.uploader.upload_stream(
+
+        const uploadResult =
+            await new Promise(
+
+                (
+                    resolve,
+                    reject
+                ) => {
+
+                    const uploadStream =
+                        cloudinary
+                            .uploader
+                            .upload_stream(
+
                                 {
+
                                     resource_type:
                                         "auto",
 
-                                    folder:
-                                        `communication-widget/${platformId}`,
+                                    folder,
+
                                 },
 
                                 (
@@ -126,33 +161,27 @@ router.post(
                                             error
                                         );
 
-                                    } else {
-
-                                        resolve(
-                                            result
-                                        );
-
+                                        return;
                                     }
 
+
+                                    resolve(
+                                        result
+                                    );
                                 }
                             );
 
 
-                        uploadStream.end(
-                            req.file.buffer
-                        );
-
-                    }
-                );
-
-
-            console.log(
-                "CLOUDINARY RESULT:",
-                uploadResult
+                    uploadStream.end(
+                        encryptedFile,
+                    );
+                }
             );
 
 
-            return res.status(200).json({
+        return res
+            .status(200)
+            .json({
 
                 message:
                     "File uploaded successfully",
@@ -180,25 +209,24 @@ router.post(
                     resourceType:
                         uploadResult.resource_type,
 
-                    /*
-                     * Return platform ownership.
-                     */
-
                     platformId,
 
                 },
 
             });
 
-        } catch (error) {
 
-            console.error(
-                "Cloudinary upload error:",
-                error
-            );
+    } catch (error) {
+
+        console.error(
+            "Cloudinary upload error:",
+            error
+        );
 
 
-            return res.status(500).json({
+        return res
+            .status(500)
+            .json({
 
                 message:
                     "File upload failed",
@@ -207,35 +235,183 @@ router.post(
                     error.message,
 
             });
-
-        }
-
     }
+}
+
+
 );
 
 
 /*
- * ---------------------------------------------------------
- * Delete File
- * ---------------------------------------------------------
- *
- * publicId must belong to the requesting platform folder.
- * ---------------------------------------------------------
+ * ---
+ * Download / Decrypt File
+ * ---
  */
 
-router.delete(
-    "/upload",
-
+router.get(
+    "/download",
     requirePlatform,
+    async (req, res) => {
+        try {
+            const {
+                publicId,
+                resourceType = "raw",
+                fileType,
+                fileName,
+            } = req.query;
 
-    async (
-        req,
-        res
-    ) => {
+            const platformId =
+                req.platformId;
+
+            if (!publicId) {
+                return res
+                    .status(400)
+                    .json({
+                        message:
+                            "publicId is required",
+                    });
+            }
+
+            /*
+             * Verify that the file belongs
+             * to the requesting platform.
+             */
+            const expectedPrefix =
+                `communication-widget/${platformId}/`;
+
+            if (
+                !publicId.startsWith(
+                    expectedPrefix
+                )
+            ) {
+                return res
+                    .status(403)
+                    .json({
+                        message:
+                            "File does not belong to this platform",
+                    });
+            }
+
+            /*
+             * Generate Cloudinary URL
+             * for the encrypted asset.
+             */
+            const encryptedUrl =
+                cloudinary.url(
+                    publicId,
+                    {
+                        resource_type:
+                            resourceType,
+                        secure: true,
+                    }
+                );
+
+            /*
+             * Fetch encrypted bytes
+             * from Cloudinary.
+             */
+            const response =
+                await fetch(
+                    encryptedUrl
+                );
+
+            if (!response.ok) {
+                return res
+                    .status(404)
+                    .json({
+                        message:
+                            "Encrypted file not found",
+                    });
+            }
+
+            const encryptedBuffer =
+                Buffer.from(
+                    await response.arrayBuffer()
+                );
+
+            /*
+             * Decrypt the file.
+             */
+            const decryptedFile =
+                decryptFile(
+                    encryptedBuffer,
+                    {
+                        platformId,
+                        entity: "file",
+                    }
+                );
+
+            /*
+             * Return original file
+             * to the frontend.
+             */
+            res.setHeader(
+                "Content-Type",
+                fileType ||
+                    "application/octet-stream"
+            );
+
+            if (fileName) {
+                res.setHeader(
+                    "Content-Disposition",
+                    `inline; filename="${encodeURIComponent(fileName)}"`
+                );
+            }
+
+            return res.send(
+                decryptedFile
+            );
+
+        } catch (error) {
+            console.error(
+                "File decrypt error:",
+                error
+            );
+
+            return res
+                .status(500)
+                .json({
+                    message:
+                        "File decryption failed",
+                    error:
+                        error.message,
+                });
+        }
+    }
+);
+
+/*
+
+* ---
+* Delete File
+* ---
+*
+* A platform can only delete files inside
+* its own Cloudinary folder.
+* ---
+
+*/
+
+router.delete(
+"/upload",
+
+
+requirePlatform,
+
+async (
+    req,
+    res
+) => {
+
+    try {
 
         const {
+
             publicId,
-            resourceType = "image",
+
+            resourceType =
+                "image",
+
         } = req.body || {};
 
 
@@ -245,19 +421,20 @@ router.delete(
 
         if (!publicId) {
 
-            return res.status(400).json({
+            return res
+                .status(400)
+                .json({
 
-                message:
-                    "publicId is required",
+                    message:
+                        "publicId is required",
 
-            });
-
+                });
         }
 
 
         /*
-         * Verify platform ownership from
-         * Cloudinary public ID.
+         * Verify that the public ID belongs
+         * to the requesting platform.
          */
 
         const expectedPrefix =
@@ -265,49 +442,60 @@ router.delete(
 
 
         if (
+
             !publicId.startsWith(
                 expectedPrefix
             )
+
         ) {
 
-            return res.status(403).json({
+            return res
+                .status(403)
+                .json({
 
-                message:
-                    "File does not belong to this platform",
+                    message:
+                        "File does not belong to this platform",
 
-            });
-
+                });
         }
 
 
-        try {
+        await cloudinary
+            .uploader
+            .destroy(
 
-            await cloudinary.uploader.destroy(
                 publicId,
 
                 {
+
                     resource_type:
                         resourceType,
+
                 }
             );
 
 
-            return res.status(200).json({
+        return res
+            .status(200)
+            .json({
 
                 message:
                     "File cleanup completed",
 
             });
 
-        } catch (error) {
 
-            console.error(
-                "Cloudinary cleanup error:",
-                error
-            );
+    } catch (error) {
+
+        console.error(
+            "Cloudinary cleanup error:",
+            error
+        );
 
 
-            return res.status(500).json({
+        return res
+            .status(500)
+            .json({
 
                 message:
                     "File cleanup failed",
@@ -316,12 +504,10 @@ router.delete(
                     error.message,
 
             });
-
-        }
-
     }
+}
+
+
 );
 
-
 export default router;
-
