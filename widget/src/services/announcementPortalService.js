@@ -325,3 +325,48 @@ export const deleteAnnouncementPortal = async (
 };
 
 
+
+/* 
+ * ---------------------------------------------------------
+ * Download Announcement Attachment
+ * ---------------------------------------------------------
+ *
+ * Attachment Cloudinary se directly nahi khulega because
+ * the stored file is encrypted.
+ *
+ * Backend fetches + decrypts the file and returns the
+ * original file as a blob.
+ * ---------------------------------------------------------
+ */
+
+export const downloadAnnouncementAttachment = async ({
+    portalId,
+    announcementId,
+    publicId,
+    userId,
+    platformId,
+    fileType,
+    fileName,
+    resourceType,
+}) => {
+
+    const api = getApi();
+
+    const response = await api.get(
+        
+        `/announcement-portals/${portalId}/announcements/${announcementId}/attachments/download`,
+        {
+            params: {
+                publicId,
+                userId,
+                platformId,
+                fileType,
+                fileName,
+                resourceType: resourceType||"raw",
+            },
+            responseType: "blob",
+        }
+    );
+
+    return response.data;
+};

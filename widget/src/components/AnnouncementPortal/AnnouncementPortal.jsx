@@ -55,7 +55,7 @@ function AnnouncementPortal({
     onBack,
 }) 
 {
-
+    console.log("announcment portl enetered ",platformId);
     const userId =
         currentUser?.userId;
 
@@ -1893,6 +1893,8 @@ function AnnouncementPortal({
                             loading={loadingAnnouncements}
                             onDelete={handleDeleteAnnouncement}
                             onEdit={handleEditAnnouncement}
+                            userId={userId}
+                            platformId={platformId}
                         />
                     )}
 

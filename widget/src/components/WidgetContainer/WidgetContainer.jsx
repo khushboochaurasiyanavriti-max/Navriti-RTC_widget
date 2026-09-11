@@ -81,6 +81,8 @@ function WidgetContainer({
     theme = "light",
     onThemeChange,
 }) {
+    
+    console.log("widget entered ",platformId);
 
     const senderId = currentUser?.userId;
 

@@ -258,6 +258,7 @@ router.get(
                 resourceType = "raw",
                 fileType,
                 fileName,
+                entity = "file",
             } = req.query;
 
             const platformId =
@@ -269,6 +270,25 @@ router.get(
                     .json({
                         message:
                             "publicId is required",
+                    });
+            }
+
+            /*
+             * Only allow known encryption contexts.
+             */
+            const allowedEntities = [
+                "file",
+                "announcement-file",
+            ];
+
+            if (
+                !allowedEntities.includes(entity)
+            ) {
+                return res
+                    .status(400)
+                    .json({
+                        message:
+                            "Invalid file entity",
                     });
             }
 
@@ -330,14 +350,16 @@ router.get(
                 );
 
             /*
-             * Decrypt the file.
+             * Decrypt using the SAME
+             * platform + entity context
+             * that was used during upload.
              */
             const decryptedFile =
                 decryptFile(
                     encryptedBuffer,
                     {
                         platformId,
-                        entity: "file",
+                        entity,
                     }
                 );
 

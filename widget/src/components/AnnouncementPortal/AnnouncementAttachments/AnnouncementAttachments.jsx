@@ -1,5 +1,10 @@
 import "./AnnouncementAttachments.css";
 
+import {
+    downloadAnnouncementAttachment ,
+} from "../../../services/announcementPortalService";
+
+
 const formatFileSize = (bytes) => {
 
     if (!bytes) {
@@ -32,6 +37,10 @@ const formatFileSize = (bytes) => {
 
 function AnnouncementAttachments({
     attachments,
+    portalId,
+    announcementId,
+    userId,
+    platformId,
 }) {
 
     if (
@@ -40,6 +49,72 @@ function AnnouncementAttachments({
     ) {
         return null;
     }
+    console.log("currentplatform is ",platformId);
+
+
+    const handleAttachmentOpen = async (
+        attachment
+    ) => {
+
+        try {
+
+            const blob =
+                await downloadAnnouncementAttachment({
+                    
+                    portalId,
+                    announcementId,
+                    publicId:
+                        attachment.publicId,
+                    userId,
+                    platformId,
+                    fileType:
+                        attachment.fileType,
+                    fileName:
+                        attachment.fileName,
+                    resourceType:
+                        attachment.resourceType ||"raw",
+                });
+
+
+            const blobUrl =
+                window.URL.createObjectURL(
+                    blob
+                );
+
+
+            /*
+             * Open decrypted file in a new tab.
+             */
+            window.open(
+                blobUrl,
+                "_blank",
+                "noopener,noreferrer"
+            );
+
+
+            /*
+             * Give the browser enough time to
+             * load the file before revoking URL.
+             */
+            setTimeout(() => {
+
+                window.URL.revokeObjectURL(
+                    blobUrl
+                );
+
+            }, 60 * 1000);
+
+
+        } catch (error) {
+
+            console.error(
+                "Failed to open announcement attachment:",
+                error
+            );
+
+        }
+
+    };
 
 
     return (
@@ -53,22 +128,27 @@ function AnnouncementAttachments({
             <div className="announcement-attachment-list">
 
                 {attachments.map(
-                    (attachment, index) => {
+                    (
+                        attachment,
+                        index
+                    ) => {
 
                         const key =
                             attachment.publicId ||
                             attachment.url ||
                             `${attachment.fileName}-${index}`;
 
+
                         return (
-                            <a
+                            <button
                                 key={key}
-                                href={
-                                    attachment.url
-                                }
-                                target="_blank"
-                                rel="noopener noreferrer"
+                                type="button"
                                 className="announcement-attachment"
+                                onClick={() =>
+                                    handleAttachmentOpen(
+                                        attachment
+                                    )
+                                }
                             >
 
                                 <div className="announcement-attachment-icon">
@@ -96,6 +176,7 @@ function AnnouncementAttachments({
                                             </span>
                                         )}
 
+
                                         {attachment.fileSize && (
                                             <>
                                                 <span>
@@ -121,8 +202,9 @@ function AnnouncementAttachments({
                                     ↗
                                 </div>
 
-                            </a>
+                            </button>
                         );
+
                     }
                 )}
 
@@ -131,5 +213,6 @@ function AnnouncementAttachments({
         </div>
     );
 }
+
 
 export default AnnouncementAttachments;

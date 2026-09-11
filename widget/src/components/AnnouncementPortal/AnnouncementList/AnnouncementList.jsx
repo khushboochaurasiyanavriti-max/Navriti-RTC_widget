@@ -9,7 +9,11 @@ function AnnouncementList({
     loading,
     onDelete,
     onEdit,
+    userId,
+    platformId,
+
 }) {
+    console.log("Announcemnt entered ",platformId);
 
     if (loading) {
         return (
@@ -67,6 +71,9 @@ function AnnouncementList({
                             onDelete
                         }
                         onEdit={onEdit}
+                        userId={userId}
+                        platformId={platformId}
+                        portalId={selectedPortal._id}
                     />
 
                 )

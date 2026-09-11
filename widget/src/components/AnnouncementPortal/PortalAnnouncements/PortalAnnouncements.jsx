@@ -7,7 +7,10 @@ function PortalAnnouncements({
     loading,
     onDelete,
     onEdit,
+    userId,
+    platformId,
 }) {
+    console.log("portal announcments enetered: ",platformId);
     return (
         <AnnouncementList
             announcements={announcements}
@@ -15,6 +18,8 @@ function PortalAnnouncements({
             loading={loading}
             onDelete={onDelete}
             onEdit={onEdit}
+            userId={userId}
+            platformId={platformId}
         />
     );
 }

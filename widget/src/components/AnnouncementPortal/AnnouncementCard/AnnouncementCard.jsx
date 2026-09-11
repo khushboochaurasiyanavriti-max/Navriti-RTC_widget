@@ -17,7 +17,11 @@ function AnnouncementCard({
     canManage,
     onDelete,
     onEdit,
+    portalId,
+    userId,
+    platformId,
 }) {
+    console.log("card entered platfom ",platformId);
 
     const handleDelete = () => {
 
@@ -34,7 +38,6 @@ function AnnouncementCard({
             announcement._id
         );
     };
-
 
     return (
         <div className="announcement-card-shell">
@@ -112,6 +115,8 @@ function AnnouncementCard({
             </div>
 
 
+
+
             {/* =================================
                 Audience
             ================================== */}
@@ -130,11 +135,14 @@ function AnnouncementCard({
             {/* =================================
                 Attachments
             ================================== */}
-
+            
+                
             <AnnouncementAttachments
-                attachments={
-                    announcement.attachments
-                }
+                attachments={announcement.attachments}
+                portalId={portalId}
+                announcementId={announcement._id}
+                userId={userId}
+                platformId={platformId}
             />
 
             </article>

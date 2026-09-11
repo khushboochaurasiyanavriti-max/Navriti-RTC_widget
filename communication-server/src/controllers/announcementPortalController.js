@@ -22,6 +22,10 @@ import {
     deleteAnnouncement as deleteAnnouncementCassandra,
 } from "../repositories/announcementRepository.js";
 
+import {
+    encryptFile,
+    decryptFile,
+} from "../service/fileEncryptionService.js";
 
 let io = null;
 
@@ -315,8 +319,19 @@ const createAnnouncement = async (
     res
 ) => {
     try {
+        
         const { portalId } =
             req.params;
+        const platformId =
+            req.platformId ||
+            req.body?.platformId ||
+            req.query?.platformId;
+
+        if (!platformId) {
+            return res.status(400).json({
+                message: "platformId is required",
+            });
+        }
 
         const {
             senderId,
@@ -515,74 +530,44 @@ const createAnnouncement = async (
 
         const attachments = [];
 
-        for (
-            const file
-            of req.files || []
-        ) {
+        for (const file of req.files || []) {
+            const encryptedFile = encryptFile(
+                file.buffer,
+                {
+                    platformId,
+                    entity: "announcement-file",
+                }
+            );
 
-            const uploadResult =
-                await new Promise(
-                    (
-                        resolve,
-                        reject
-                    ) => {
-
-                        const uploadStream =
-                            cloudinary
-                                .uploader
-                                .upload_stream(
-                                    {
-                                        resource_type:
-                                            "auto",
-
-                                        folder:
-                                            "communication-widget/announcements",
-                                    },
-
-                                    (
-                                        error,
-                                        result
-                                    ) => {
-
-                                        if (
-                                            error
-                                        ) {
-                                            reject(
-                                                error
-                                            );
-                                        } else {
-                                            resolve(
-                                                result
-                                            );
-                                        }
-                                    }
-                                );
-
-                        uploadStream.end(
-                            file.buffer
+            const uploadResult = await new Promise(
+                (resolve, reject) => {
+                    const uploadStream =
+                        cloudinary.uploader.upload_stream(
+                            {
+                                resource_type: "auto",
+                                folder:
+                                    `communication-widget/${platformId}/announcements`,
+                            },
+                            (error, result) => {
+                                if (error) {
+                                    reject(error);
+                                } else {
+                                    resolve(result);
+                                }
+                            }
                         );
-                    }
-                );
 
+                    uploadStream.end(encryptedFile);
+                }
+            );
 
             attachments.push({
-                url:
-                    uploadResult.secure_url,
-
-                fileName:
-                    file.originalname,
-
-                fileType:
-                    file.mimetype,
-
-                fileSize:
-                    file.size,
-
-                publicId:
-                    uploadResult.public_id,
-
-                resourceType:
-                    uploadResult.resource_type,
+                url: uploadResult.secure_url,
+                fileName: file.originalname,
+                fileType: file.mimetype,
+                fileSize: file.size,
+                publicId: uploadResult.public_id,
+                resourceType: uploadResult.resource_type,
             });
         }
 
@@ -598,7 +583,7 @@ const createAnnouncement = async (
 
 
         const portal = await getPortalById(portalId);
-        const platformId = req.body?.platformId || req.query?.platformId || portal?.platformId;
+        // const platformId = req.body?.platformId || req.query?.platformId || portal?.platformId;
 
         const announcement =
             await createAnnouncementCassandra({
@@ -676,6 +661,260 @@ const createAnnouncement = async (
             message:
                 "Failed to create announcement",
 
+            error:
+                error.message,
+        });
+    }
+};
+
+
+/* =====================================================
+   DOWNLOAD / DECRYPT ANNOUNCEMENT ATTACHMENT
+===================================================== */
+
+const downloadAnnouncementAttachment = async (
+    req,
+    res
+) => {
+    try {
+        
+            console.log("announcment controlled download called");
+        const {
+            portalId,
+            announcementId,
+        } = req.params;
+        const platformId =
+            req.platformId ||
+            req.body?.platformId ||
+            req.query?.platformId;
+        const {
+            publicId,
+            userId,
+            fileType,
+            fileName,
+            resourceType = "raw",
+        } = req.query;
+
+        /* -------------------------------------------------
+         * Validate required fields
+         * ------------------------------------------------- */
+
+        if (!platformId) {
+            return res.status(400).json({
+                message: "platformId is required",
+            });
+        }
+
+        if (!userId) {
+            return res.status(400).json({
+                message: "userId is required",
+            });
+        }
+
+        if (!publicId) {
+            return res.status(400).json({
+                message: "publicId is required",
+            });
+        }
+
+        /* -------------------------------------------------
+         * Verify portal belongs to platform
+         * ------------------------------------------------- */
+
+        const portal = await getPortalById(
+            portalId
+        );
+
+        if (
+            !portal ||
+            portal.platformId !== platformId
+        ) {
+            return res.status(404).json({
+                message:
+                    "Portal not found on this platform",
+            });
+        }
+
+        /* -------------------------------------------------
+         * Verify user belongs to portal
+         * ------------------------------------------------- */
+
+        const member = await getMember({
+            portalId,
+            userId,
+            platformId,
+        });
+
+        const isPortalMember =
+            member ||
+            portal.createdBy === userId;
+
+        if (!isPortalMember) {
+            return res.status(403).json({
+                message:
+                    "You are not a member of this announcement portal",
+            });
+        }
+
+        /* -------------------------------------------------
+         * Get announcement
+         * ------------------------------------------------- */
+
+        const announcement =
+            await getAnnouncementById(
+                announcementId,
+                platformId
+            );
+
+        if (
+            !announcement ||
+            announcement.portalId !== portalId ||
+            announcement.platformId !== platformId
+        ) {
+            return res.status(404).json({
+                message:
+                    "Announcement not found on this platform",
+            });
+        }
+
+        /* -------------------------------------------------
+         * Verify attachment belongs to announcement
+         * ------------------------------------------------- */
+
+        const attachments =
+            announcement.attachments || [];
+
+        const attachment =
+            attachments.find(
+                (item) =>
+                    item.publicId === publicId
+            );
+
+        if (!attachment) {
+            return res.status(404).json({
+                message:
+                    "Attachment not found in this announcement",
+            });
+        }
+
+        /* -------------------------------------------------
+         * Verify Cloudinary publicId belongs
+         * to current platform
+         * ------------------------------------------------- */
+
+        const expectedPrefix =
+            `communication-widget/${platformId}/`;
+
+        if (
+            !publicId.startsWith(
+                expectedPrefix
+            )
+        ) {
+            return res.status(403).json({
+                message:
+                    "File does not belong to this platform",
+            });
+        }
+
+        /* -------------------------------------------------
+         * IMPORTANT:
+         *
+         * Announcement files were encrypted using:
+         *
+         * entity: "announcement-file"
+         *
+         * Therefore decryption MUST use the
+         * exact same entity.
+         * ------------------------------------------------- */
+
+        const encryptedUrl =
+            cloudinary.url(
+                publicId,
+                {
+                    resource_type:
+                        attachment.resourceType ||
+                        resourceType,
+                    secure: true,
+                }
+            );
+
+        /* -------------------------------------------------
+         * Fetch encrypted file
+         * ------------------------------------------------- */
+
+        const response =
+            await fetch(
+                encryptedUrl
+            );
+
+        if (!response.ok) {
+            console.error(
+                "Cloudinary attachment fetch failed:",
+                response.status,
+                encryptedUrl
+            );
+
+            return res.status(404).json({
+                message:
+                    "Encrypted attachment not found",
+            });
+        }
+
+        const encryptedBuffer =
+            Buffer.from(
+                await response.arrayBuffer()
+            );
+
+        /* -------------------------------------------------
+         * Decrypt using centralized service
+         * ------------------------------------------------- */
+
+        const decryptedFile =
+            decryptFile(
+                encryptedBuffer,
+                {
+                    platformId,
+                    entity:
+                        "announcement-file",
+                }
+            );
+
+        /* -------------------------------------------------
+         * Return original file
+         * ------------------------------------------------- */
+
+        res.setHeader(
+            "Content-Type",
+            attachment.fileType ||
+                fileType ||
+                "application/octet-stream"
+        );
+
+        const originalFileName =
+            attachment.fileName ||
+            fileName ||
+            "attachment";
+
+        res.setHeader(
+            "Content-Disposition",
+            `inline; filename="${encodeURIComponent(
+                originalFileName
+            )}"`
+        );
+
+        return res.send(
+            decryptedFile
+        );
+
+    } catch (error) {
+        console.error(
+            "Download announcement attachment error:",
+            error
+        );
+
+        return res.status(500).json({
+            message:
+                "Failed to download announcement attachment",
             error:
                 error.message,
         });
@@ -1894,6 +2133,7 @@ export {
     createAnnouncement,
     getAnnouncements,
     getAnnouncement,
+    downloadAnnouncementAttachment,
     updateAnnouncement,
     deleteAnnouncement,
     getUserAnnouncementPortals,
