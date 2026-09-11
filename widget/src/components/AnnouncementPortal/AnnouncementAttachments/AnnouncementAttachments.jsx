@@ -49,7 +49,6 @@ function AnnouncementAttachments({
     ) {
         return null;
     }
-    console.log("currentplatform is ",platformId);
 
 
     const handleAttachmentOpen = async (
@@ -61,8 +60,6 @@ function AnnouncementAttachments({
             const blob =
                 await downloadAnnouncementAttachment({
                     
-                    portalId,
-                    announcementId,
                     publicId:
                         attachment.publicId,
                     userId,

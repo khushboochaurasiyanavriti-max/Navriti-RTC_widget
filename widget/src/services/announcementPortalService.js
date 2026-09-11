@@ -340,8 +340,6 @@ export const deleteAnnouncementPortal = async (
  */
 
 export const downloadAnnouncementAttachment = async ({
-    portalId,
-    announcementId,
     publicId,
     userId,
     platformId,
@@ -353,8 +351,7 @@ export const downloadAnnouncementAttachment = async ({
     const api = getApi();
 
     const response = await api.get(
-        
-        `/announcement-portals/${portalId}/announcements/${announcementId}/attachments/download`,
+        "/files/download",
         {
             params: {
                 publicId,
@@ -362,7 +359,8 @@ export const downloadAnnouncementAttachment = async ({
                 platformId,
                 fileType,
                 fileName,
-                resourceType: resourceType||"raw",
+                resourceType,
+                entity: "announcement-file",
             },
             responseType: "blob",
         }
